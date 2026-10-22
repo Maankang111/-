@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>价格行为学习系统</title>
+<style>
+  :root{
+    --ink:#1b1c1e;--muted:#6a7280;--line:#e2e5ea;--panel:#f7f8fa;
+    --accent:#2f5d8a;--accent-soft:#e9f0f7;--ok:#2f6b4f;--ok-soft:#eaf2ed;
+    --bad:#8a3b32;--bad-soft:#f6ecea;--stage:#eef1f4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;padding:24px 18px 70px;background:#fff;color:var(--ink);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    font-size:14px;line-height:1.65;
+  }
+  .wrap{max-width:1080px;margin:0 auto;}
+  header{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid var(--line);}
+  header h1{font-size:19px;font-weight:600;margin:0;letter-spacing:.2px;}
+  header .date{font-size:13px;color:var(--muted);}
+  header .spacer{flex:1;}
+  .btn{border:1px solid #c3cad3;background:#fff;color:#35353a;padding:5px 12px;font:inherit;font-size:12.5px;cursor:pointer;}
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .btn.primary:hover{background:#27507a;color:#fff;}
+  .btn.ghost{border-color:var(--line);color:var(--muted);}
+  .btn.sm{padding:3px 9px;font-size:12px;}
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+  .stat{border:1px solid var(--line);padding:11px 13px;background:#fff;}
+  .stat .k{font-size:12px;color:var(--muted);margin-bottom:3px;}
+  .stat .v{font-size:20px;font-weight:600;line-height:1.2;}
+  .stat .v small{font-size:12px;font-weight:400;color:var(--muted);margin-left:3px;}
+  .stat.warn .v{color:var(--bad);}
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:22px;}
+  @media (max-width:880px){.grid2{grid-template-columns:1fr;} .stats{grid-template-columns:repeat(2,1fr);}}
+  section{margin-bottom:24px;}
+  h2{font-size:14.5px;font-weight:600;margin:0 0 12px;padding-left:9px;border-left:3px solid var(--accent);line-height:1.3;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  h2 .tagline{font-weight:400;font-size:12px;color:var(--muted);}
+  .card{border:1px solid var(--line);padding:14px 16px;background:#fff;}
+  .card.soft{background:var(--panel);}
+  .taskrow{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px dashed var(--line);}
+  .taskrow:last-child{border-bottom:none;}
+  .taskrow input[type=checkbox]{appearance:none;-webkit-appearance:none;width:16px;height:16px;flex:0 0 auto;border:1.5px solid #b7bec7;background:#fff;margin:3px 0 0;cursor:pointer;position:relative;}
+  .taskrow input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent);}
+  .taskrow input[type=checkbox]:checked::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:9px;border:solid #fff;border-width:0 1.7px 1.7px 0;transform:rotate(42deg);}
+  .taskrow .body{flex:1;min-width:0;}
+  .taskrow .t{font-weight:600;font-size:13.5px;}
+  .taskrow .d{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .taskrow.done .t{color:var(--muted);text-decoration:line-through;}
+  .eplist{margin:6px 0 0;}
+  .ep{font-size:12.5px;line-height:1.6;padding:1px 0;color:#33363a;}
+  .ep b{color:var(--accent);font-weight:600;margin-right:7px;}
+  .ep i{color:var(--muted);font-style:normal;margin-left:7px;font-size:11.5px;}
+  textarea{width:100%;min-height:76px;border:1px solid var(--line);padding:8px 10px;font:inherit;font-size:13px;resize:vertical;}
+  textarea:focus{outline:none;border-color:var(--accent);}
+  input[type=date],input[type=text]{border:1px solid var(--line);padding:5px 8px;font:inherit;font-size:13px;}
+  input[type=date]:focus,input[type=text]:focus{outline:none;border-color:var(--accent);}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;}
+  .cal .hd{font-size:11.5px;color:var(--muted);text-align:center;padding-bottom:2px;}
+  .cal .d{border:1px solid var(--line);min-height:54px;padding:5px 6px;font-size:11.5px;color:#4b5563;background:#fff;}
+  .cal .d .n{font-weight:600;font-size:12px;color:var(--ink);}
+  .cal .d.done{background:var(--ok-soft);border-color:#cfe0d6;}
+  .cal .d.miss{background:var(--bad-soft);border-color:#e6d2cf;}
+  .cal .d.today{outline:2px solid var(--accent);outline-offset:-2px;}
+  .cal .d.future{background:#fcfcfd;color:#a3a9b3;}
+  .cal .d .lab{font-size:10.5px;line-height:1.3;margin-top:2px;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top;}
+  th{background:var(--panel);font-weight:600;white-space:nowrap;font-size:12px;}
+  td.c,th.c{text-align:center;}
+  tr.stage-row td{background:var(--stage);font-weight:600;color:#2b3f55;font-size:12px;}
+  .quiz{border:1px solid var(--line);padding:13px 15px;margin-bottom:10px;}
+  .quiz .qtext{font-size:13.5px;margin-bottom:8px;}
+  .quiz .qno{color:var(--muted);font-size:12px;margin-right:5px;}
+  .opt{display:flex;align-items:flex-start;gap:8px;padding:4px 0;cursor:pointer;font-size:13px;}
+  .opt input{margin-top:4px;}
+  .fb{font-size:12.5px;margin-top:7px;padding:6px 9px;}
+  .fb.ok{background:var(--ok-soft);color:var(--ok);}
+  .fb.bad{background:var(--bad-soft);color:var(--bad);}
+  .score{font-size:13px;color:var(--muted);}
+  .score b{color:var(--ink);}
+  .empty{color:var(--muted);font-size:13px;padding:6px 0;}
+  .note{color:var(--muted);font-size:12px;}
+  .flex{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  details{border:1px solid var(--line);}
+  details summary{cursor:pointer;padding:10px 14px;background:var(--panel);font-size:13.5px;font-weight:600;list-style:none;}
+  details summary::-webkit-details-marker{display:none;}
+  details summary::before{content:"+ ";color:var(--muted);}
+  details[open] summary::before{content:"- ";}
+  details .dbody{padding:12px 14px;border-top:1px solid var(--line);}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#2b2f35;color:#fff;padding:8px 16px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .18s;z-index:99;}
+  .toast.on{opacity:1;}
+  .mode{font-size:11.5px;color:var(--muted);border:1px solid var(--line);padding:3px 9px;background:var(--panel);white-space:nowrap;}
+  .mode.file{color:var(--ok);border-color:#cfe0d6;background:var(--ok-soft);}
+  .chartgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;}
+  @media (max-width:880px){.chartgrid{grid-template-columns:repeat(2,1fr);}}
+  .chartgrid label{font-size:11.5px;color:var(--muted);display:block;}
+  .chartgrid input,.chartgrid select{width:100%;margin-top:3px;}
+  select{border:1px solid var(--line);padding:5px 6px;font:inherit;font-size:12.5px;background:#fff;color:inherit;}
+  select:focus{outline:none;border-color:var(--accent);}
+  .wrongitem{border:1px solid var(--line);padding:9px 11px;margin-bottom:8px;font-size:12.5px;background:#fff;}
+  .wrongitem .wt{color:var(--ink);}
+  .wrongitem .wa{color:var(--ok);margin-top:3px;}
+  .wrongitem .wm{color:var(--muted);font-size:11.5px;margin-top:3px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .chip{border:1px solid #d8dee6;background:#fff;padding:2px 8px;font-size:12px;color:#41474f;}
+  .chip b{color:var(--accent);margin-right:4px;}
+  .reviewbox{border:1px solid #dbe3ec;background:var(--accent-soft);padding:10px 12px;margin-top:12px;}
+  .reviewbox .rt{font-size:12.5px;font-weight:600;color:var(--accent);margin-bottom:5px;}
+  .revline{font-size:12.5px;color:#3d4650;padding:1px 0;}
+  .revline b{color:var(--accent);margin-right:6px;}
+  .revline i{font-style:normal;color:var(--muted);margin-left:6px;font-size:11.5px;}
+  .upzone{border:1px dashed #c9d1da;background:#fbfcfd;padding:10px 12px;margin-top:10px;}
+  .upzone.drag{border-color:var(--accent);background:var(--accent-soft);}
+  .uptip{font-size:12.5px;color:var(--muted);}
+  .uptip .lnk{color:var(--accent);cursor:pointer;text-decoration:underline;}
+  .thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+  .thumb{position:relative;border:1px solid var(--line);width:108px;height:80px;overflow:hidden;background:#fff;}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in;}
+  .thumb .del{position:absolute;top:0;right:0;background:rgba(30,34,40,.7);color:#fff;font-size:10px;line-height:1.6;padding:0 5px;cursor:pointer;}
+  .thumb .cap{position:absolute;left:0;bottom:0;right:0;background:rgba(30,34,40,.62);color:#fff;font-size:10px;line-height:1.5;padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  @media print{.btn,header .actions,.cal,.toast{display:none !important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>价格行为学习系统</h1>
+      <div class="date" id="headDate"></div>
+    </div>
+    <div class="spacer"></div>
+    <div class="actions flex">
+      <span class="mode" id="modeTag">浏览器本地</span>
+      <button class="btn" id="btnCommit" type="button">提交到 git</button>
+      <button class="btn ghost" id="btnSet" type="button">设置</button>
+      <button class="btn" id="btnExport" type="button">导出备份</button>
+      <button class="btn" id="btnImport" type="button">导入备份</button>
+      <input type="file" id="fileImport" accept=".json" style="display:none">
+    </div>
+  </header>
+
+  <div id="setPanel" style="display:none;margin-bottom:18px;">
+    <div class="card soft">
+      <div class="flex">
+        <label style="font-size:13px;">开始日期
+          <input type="date" id="inpStart" style="margin-left:6px;">
+        </label>
+        <button class="btn primary sm" id="btnStartSave" type="button">保存</button>
+        <button class="btn ghost sm" id="btnStartReset" type="button">重置为今天</button>
+        <span class="note">改开始日期会让整个排期平移，已完成的记录按日期保留。</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="k">当前进度</div><div class="v" id="stWeek">第 1 周</div></div>
+    <div class="stat"><div class="k">连续完成</div><div class="v" id="stStreak">0 <small>天</small></div></div>
+    <div class="stat" id="stBackWrap"><div class="k">欠账天数</div><div class="v" id="stBack">0 <small>天</small></div></div>
+    <div class="stat"><div class="k" id="stPctK">已看集数</div><div class="v" id="stPct">0<small>/165</small></div></div>
+  </div>
+
+  <div class="grid2">
+    <section style="margin-bottom:0;">
+      <h2>今日任务 <span class="tagline" id="todayTag"></span></h2>
+      <div class="card" id="todayCard"></div>
+      <details style="margin-top:12px;">
+        <summary>判据速查：四种状态怎么认</summary>
+        <div class="dbody">
+          <table>
+            <tr><th style="width:64px">状态</th><th>图上长什么样</th><th style="width:96px">Always In</th><th style="width:34%">怎么做</th></tr>
+            <tr><td>突破</td><td>连续大实体趋势K，几乎没有回调，往往是微通道</td><td>非常明确</td><td>追，用突破单或市价，止损放信号K另一端</td></tr>
+            <tr><td>通道</td><td>有回调但不断新高或新低，能画出两条平行线</td><td>明确但在减弱</td><td>等回调到 H1、H2 或 L1、L2，不追</td></tr>
+            <tr><td>区间</td><td>K线大量重叠，上下反复，画不出线</td><td>不明确</td><td>边缘高抛低吸，或者不动，等真突破</td></tr>
+            <tr><td>转换</td><td>通道走平，突破失败，高点不再抬高</td><td>正在变</td><td>减仓，等确认，不猜</td></tr>
+          </table>
+          <p class="note" style="margin-top:8px;">判断永远先问一句：现在是谁在做主。答不上来就是区间。</p>
+        </div>
+      </details>
+    </section>
+
+    <section style="margin-bottom:0;">
+      <h2>明日预告</h2>
+      <div class="card soft" id="tomorrowCard"></div>
+      <h2 style="margin-top:18px;">今日知识点</h2>
+      <div class="card">
+        <textarea id="notes" placeholder="今天真正记住的三条，用自己的话写，不要抄课件。例：通道末端的 H2 不该做，因为位置在区间上沿。"></textarea>
+        <div class="flex" style="margin-top:8px;">
+          <button class="btn primary sm" id="btnNoteSave" type="button">保存</button>
+          <span class="note" id="noteTip">存在本机，自动带日期</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <section>
+    <h2>今日标图记录 <span class="tagline">标完立刻填，这是唯一能统计的东西</span></h2>
+    <div class="card">
+      <div class="chartgrid">
+        <label>标的品种或图名<input type="text" id="chName" placeholder="例如 ES 5 分钟"></label>
+        <label>状态判断<select id="chState">
+          <option value="">选择</option><option>突破</option><option>通道</option><option>区间</option><option>转换</option>
+        </select></label>
+        <label>Always In<select id="chAI">
+          <option value="">选择</option><option>多</option><option>空</option><option>不明</option>
+        </select></label>
+        <label>等的位置<input type="text" id="chWait" placeholder="H2 / L2 / 不进场"></label>
+        <label>错因<select id="chErr">
+          <option value="">选择</option><option>状态判错</option><option>位置判错</option>
+          <option>没等到</option><option>判断正确</option><option>其他</option>
+        </select></label>
+        <label>一句话教训<input type="text" id="chNote" placeholder="追太晚"></label>
+      </div>
+      <div class="upzone" id="upzone">
+        <div class="uptip">把截图拖到这里，或按 Ctrl+V 粘贴，或 <span class="lnk" id="btnPickImg">点这里选文件</span>。可以一次选多张。</div>
+        <input type="file" id="fileImg" accept="image/*" multiple style="display:none">
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+      <div class="flex" style="margin-top:10px;">
+        <button class="btn primary sm" id="btnChartSave" type="button">保存这张</button>
+        <span class="note" id="chartTip">一天可以存多张，全部按日期归档</span>
+        <button class="btn sm ghost" id="btnOpenImg" type="button">打开图片文件夹</button>
+      </div>
+      <div class="note" id="imgPath"></div>
+      <div class="chips" id="chartList"></div>
+      <div class="thumbs" id="savedThumbs"></div>
+      <div class="note" id="errStat" style="margin-top:10px;"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>今日答题 <span class="tagline" id="quizTag">三道题，提交后立即判分，错题次日重考</span></h2>
+    <div id="quizBox"></div>
+    <div class="flex" style="margin-top:8px;">
+      <button class="btn primary sm" id="btnSubmitQuiz" type="button">提交答案</button>
+      <button class="btn ghost sm" id="btnClearQuiz" type="button">重做</button>
+      <span class="score" id="quizScore"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>近两周 <span class="tagline">红为欠，绿为完成</span></h2>
+    <div class="cal" id="cal"></div>
+  </section>
+
+  <section>
+    <h2>十八周总表 <span class="tagline">集号与标题均按官方目录核对</span></h2>
+    <details id="planDetails">
+      <summary id="planSummary">展开查看每周看哪几集、练什么、过关标准</summary>
+      <div class="dbody"><div id="planTable"></div></div>
+    </details>
+  </section>
+
+  <section>
+    <h2>错题本 <span class="tagline" id="wrongTag"></span></h2>
+    <div id="wrongBox"></div>
+  </section>
+
+  <section>
+    <h2>学习记录 <span class="tagline" id="histTag"></span></h2>
+    <div id="histBox"></div>
+  </section>
+
+  <section>
+    <h2>数据</h2>
+    <div class="card soft">
+      <p class="note" style="margin-top:0;">数据存在本机浏览器里，关掉页面不会丢。换电脑或清缓存前用「导出备份」存一份，在新机器上「导入备份」恢复。</p>
+      <p class="note" id="saveTip">当前模式：浏览器本地。想要文件存储，运行 python pa_server.py 后从 localhost 打开。</p>
+      <div class="flex">
+        <button class="btn sm" id="btnExport2" type="button">导出备份</button>
+        <button class="btn sm" id="btnImport2" type="button">导入备份</button>
+        <button class="btn sm ghost" id="btnWipe" type="button">清空全部记录</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var KEY = 'pa_system_v1';
+  var DAYS_TOTAL = 126;
+
+  /* 全部集号与标题，按官方目录核对，共 165 集 */
+  var EPISODES = [
+    {c:'12A',t:'市场循环的四个部分',d:'回调是通道的开始，通道最终变区间'},
+    {c:'12B',t:'永远在趋势或区间',d:'惯性与 80% 法则，趋势、波段、腿的定义'},
+    {c:'12C',t:'回调与区间的定义',d:'二元决策，不是趋势就是区间'},
+    {c:'13A',t:'Always In 方向',d:'当前始终在场的一边，交易者方程'},
+    {c:'13B',t:'Always In 多与空',d:'两个方向分别怎么判'},
+    {c:'13C',t:'剥头皮与波段',d:'两种做法的区别与适用'},
+    {c:'14A',t:'什么是趋势',d:'牛要更高的低点，熊要更低的高点'},
+    {c:'14B',t:'不清楚时就是区间',d:'突破是最强趋势，多数反转失败'},
+    {c:'14C',t:'趋势的类型',d:'牛熊趋势、陷阱与突破'},
+    {c:'14D',t:'从开盘起的趋势',d:'趋势中的区间，宽通道趋势'},
+    {c:'14E',t:'紧通道与小回调趋势',d:'强趋势长什么样'},
+    {c:'15A',t:'什么是突破',d:'多数突破失败，反转也是一种突破'},
+    {c:'15B',t:'突破需要跟随',d:'趋势总想反转，突破可以从小开始'},
+    {c:'15C',t:'突破通常有第二腿',d:'区间突破的特殊性'},
+    {c:'15D',t:'第二腿陷阱',d:'强突破的特征，成功还是反转'},
+    {c:'15E',t:'衰竭缺口还是测量缺口',d:'弱突破回调更深，突破回测'},
+    {c:'15F',t:'失败突破',d:'趋势恢复还是反转'},
+    {c:'15G',t:'小陷阱与弱形态',d:'5 tick 与 11 pip 陷阱'},
+    {c:'15H',t:'惊喜K与放弃K',d:'第二腿陷阱与衰竭，小幅反转'},
+    {c:'16A',t:'通道是两条线',d:'两个点定一条线，70% 法则'},
+    {c:'16B',t:'怎么画通道',d:'熊通道与牛通道的实例'},
+    {c:'16C',t:'新趋势始于旧趋势',d:'高低周期，反转与突破'},
+    {c:'16D',t:'通道的类型',d:'紧通道与宽通道，牛熊通道'},
+    {c:'16E',t:'通道演化为区间',d:'通道突破通常失败'},
+    {c:'16F',t:'用限价单交易通道线',d:'每个区间都有牛熊通道'},
+    {c:'17A',t:'紧通道与微通道',d:'两者的区别'},
+    {c:'17B',t:'紧缩区间',d:'突破还是高潮'},
+    {c:'18A',t:'区间的定义与特征',d:'困惑与失望，最容易亏钱的状态'},
+    {c:'18B',t:'区间里的买卖形态',d:'突破模式，第二腿陷阱'},
+    {c:'18C',t:'趋势恢复还是反转',d:'趋势还是一段区间中的腿'},
+    {c:'18D',t:'紧缩区间与台阶',d:'限价单市场'},
+    {c:'18E',t:'真空效应',d:'反向逻辑，反向交易突破'},
+    {c:'18F',t:'别赌区间突破',d:'突破转趋势，区间的早期信号'},
+    {c:'19A',t:'什么是支撑阻力',d:'是位置在控制价格，不是新闻'},
+    {c:'19B',t:'哪种支撑阻力最好',d:'外汇的 S/R 不精确，实例'},
+    {c:'19C',t:'其他类型的支撑阻力',d:'整数关口，一份 S/R 清单'},
+    {c:'19D',t:'买收盘与卖收盘',d:'突破之后的回测'},
+    {c:'19E',t:'最高与最低收盘',d:'牛要更高低点，50% 回调'},
+    {c:'20A',t:'测量移动',d:'第一腿等于第二腿'},
+    {c:'20B',t:'用区间和突破高度测量',d:'两种测量方式'},
+    {c:'21A',t:'什么是反转',d:'小反转与大反转，反转可由突破开始'},
+    {c:'21B',t:'反转是最早的入场',d:'80% 法则，杯柄'},
+    {c:'21C',t:'新手为什么迷恋反转',d:'买卖压力，嵌套形态'},
+    {c:'21D',t:'四成赢家与两腿',d:'十根K两腿，多数反转是双顶双底'},
+    {c:'22A',t:'大小反转的区别',d:'MTR 是最重要的反转形态'},
+    {c:'22B',t:'成功的更低高点 MTR',d:'具体走势拆解'},
+    {c:'22C',t:'均线缺口K',d:'多数顶部是双顶'},
+    {c:'22D',t:'MTR 底部与头肩',d:'失败的 MTR'},
+    {c:'23A',t:'什么是最终旗形',d:'趋势末尾的那个旗'},
+    {c:'23B',t:'小最终旗形与 ii',d:'两种变体'},
+    {c:'24A',t:'什么是楔形',d:'怎么画楔形的两条线'},
+    {c:'24B',t:'楔形很少完美',d:'多数通道其实是楔形'},
+    {c:'24C',t:'坏楔形不是反转形态',d:'反转在旧趋势结束前就开始了'},
+    {c:'24D',t:'抛物线楔形',d:'强趋势里的坏楔形'},
+    {c:'24E',t:'失败的楔形',d:'失效之后怎么处理'},
+    {c:'25A',t:'什么是双顶双底',d:'为什么有效，双顶双底旗'},
+    {c:'25B',t:'支撑阻力的测试',d:'失败的双顶双底，测量移动'},
+    {c:'26A',t:'三角楔形',d:'反转还是延续'},
+    {c:'26B',t:'扩张三角形',d:'难看的形态也是形态'},
+    {c:'27A',t:'头肩就是 MTR',d:'多数头肩反转只是小反转'},
+    {c:'27B',t:'市场抗拒改变',d:'止损被打之后怎么办'},
+    {c:'28', t:'圆顶与圆底',d:'看起来不像形态的形态'},
+    {c:'29A',t:'什么是高潮',d:'高潮的定义'},
+    {c:'29B',t:'V 顶与 V 底',d:'最陡的反转'},
+    {c:'29C',t:'高潮反转与缺口',d:'衰竭缺口与测量缺口'},
+    {c:'29D',t:'连续高潮',d:'一次接一次的高潮'},
+    {c:'29E',t:'期权公司造成的高潮',d:'失败的连续高潮'},
+    {c:'30A',t:'优势与交易者方程',d:'完美交易长什么样'},
+    {c:'30B',t:'交易者方程的三个变量',d:'概率、风险、回报'},
+    {c:'30C',t:'概率最重要',d:'Z 分数怎么看'},
+    {c:'30D',t:'50% 回调',d:'突破之后数学会改善'},
+    {c:'30E',t:'七成到九成概率',d:'40 到 60 法则，区间两端概率高'},
+    {c:'31A',t:'波段与剥头皮是什么',d:'各自适合的环境'},
+    {c:'31B',t:'波段意味着回报是风险两倍',d:'为什么新手先做波段'},
+    {c:'31C',t:'剥头皮不适合新手',d:'最小剥头皮幅度'},
+    {c:'31D',t:'波段转剥头皮',d:'用波段方式管剥头皮会亏'},
+    {c:'32A',t:'四种订单',d:'止损单、限价单、括号单、市价单'},
+    {c:'32B',t:'哪种订单更好',d:'区间是限价单市场'},
+    {c:'32C',t:'形态决定订单类型',d:'小周期可以提前入场'},
+    {c:'33A',t:'为什么要用止损',d:'止损决定仓位大小'},
+    {c:'33B',t:'止损被扫之后',d:'用正确的止损'},
+    {c:'33C',t:'形态止损与移动止损',d:'牛需要更高低点'},
+    {c:'33D',t:'趋势尊重主要回调',d:'前提变了就退出'},
+    {c:'33E',t:'宽止损',d:'什么时候必须放宽'},
+    {c:'33F',t:'用支撑阻力做止损',d:'小信号K的止损'},
+    {c:'33G',t:'保本止损与剥头皮止损',d:'突破回测时怎么处理'},
+    {c:'34A',t:'实际风险',d:'交易者方程与风险的配合'},
+    {c:'34B',t:'小风险反而没用',d:'用风险倒推目标'},
+    {c:'35A',t:'谁在分批建仓',d:'向盈利方向加仓'},
+    {c:'35B',t:'向亏损方向加仓',d:'为什么危险'},
+    {c:'35C',t:'分批建仓的样本策略',d:'两部分与四部分的做法'},
+    {c:'36A',t:'入场之后的管理',d:'别人的钱从来不是真的'},
+    {c:'36B',t:'默认的止盈规则',d:'不用想的止盈方式'},
+    {c:'37A',t:'市场能做什么',d:'如何交易的总结'},
+    {c:'37B',t:'用市场循环做交易',d:'交易者方程与 40 到 60 法则'},
+    {c:'38A',t:'更高的高点 MTR',d:'最小盈利目标'},
+    {c:'38B',t:'突破之后概率更高',d:'止盈计划'},
+    {c:'38C',t:'更低的高点 MTR',d:'顶部反转的具体打法'},
+    {c:'38D',t:'有计划地止盈',d:'小反转怎么处理'},
+    {c:'39A',t:'底部需要强多头',d:'预判底部，小反转变熊旗'},
+    {c:'39B',t:'弱形态也能成功',d:'止盈怎么做'},
+    {c:'39C',t:'没有完美形态',d:'第二信号，牛趋势需要更高低点'},
+    {c:'39D',t:'MTR 底部的实战',d:'底部反转的具体打法'},
+    {c:'40A',t:'晚入场的怕错过',d:'牛熊两边的 FOMO'},
+    {c:'40B',t:'最高最低收盘',d:'失望就意味着转区间'},
+    {c:'40C',t:'最后的趋势K',d:'被套的多头与空头'},
+    {c:'40D',t:'熊趋势的结束',d:'牛趋势的结束'},
+    {c:'40E',t:'牛趋势演化为区间',d:'卖高潮时买收盘'},
+    {c:'41A',t:'交易突破',d:'买收盘牛趋势，卖收盘熊趋势'},
+    {c:'41B',t:'是通道就按通道做',d:'突破常常跟在陷阱后面'},
+    {c:'41C',t:'在小周期提前入场',d:'弱突破之后转区间'},
+    {c:'41D',t:'熊市突破怎么卖',d:'止损管理'},
+    {c:'42A',t:'弱突破意味着很快转区间',d:'测量缺口与衰竭缺口'},
+    {c:'42B',t:'主要高潮反转',d:'微通道也可以是高潮'},
+    {c:'42C',t:'次要高潮反转',d:'小级别的高潮怎么用'},
+    {c:'43A',t:'什么是紧牛通道',d:'高周期上其实是突破'},
+    {c:'43B',t:'第一次反转通常是小反转',d:'紧牛通道里只买'},
+    {c:'43C',t:'紧牛通道里的分批建仓',d:'空头能赚钱吗'},
+    {c:'43D',t:'怎么买紧牛通道',d:'止损与止盈，最终演化为区间'},
+    {c:'44A',t:'什么是紧熊通道',d:'紧牛通道可以当熊旗'},
+    {c:'44B',t:'第一次反转通常是小反转',d:'空头视角'},
+    {c:'44C',t:'紧熊通道里只卖',d:'多头难做说明空头强'},
+    {c:'44D',t:'熊趋势就卖',d:'移动止损与止盈，所有趋势终会结束'},
+    {c:'45A',t:'什么是宽牛通道',d:'常含区间，常持续数日'},
+    {c:'45B',t:'主要与次要低点',d:'有时可以是 Always In 空'},
+    {c:'45C',t:'反转常见但会失败',d:'尽早诊断，新高之后跟随差'},
+    {c:'45D',t:'宽牛通道需要更高低点',d:'第二腿陷阱，前高上方止盈'},
+    {c:'45E',t:'宽牛通道的买入区',d:'50% 回调，每个区间都是牛旗'},
+    {c:'46A',t:'什么是宽熊通道',d:'为什么 5 分钟图少见'},
+    {c:'46B',t:'通道通常至少三天',d:'反转常见但多数失败'},
+    {c:'46C',t:'空头卖，多头有时也能买',d:'短暂 Always In 多'},
+    {c:'46D',t:'宽熊通道需要更低高点',d:'第二腿陷阱，前低下方买'},
+    {c:'46E',t:'宽熊通道的卖出区',d:'50% 回调'},
+    {c:'47A',t:'区间是宽还是紧',d:'寻找区间的信号'},
+    {c:'47B',t:'区间里的 80% 法则',d:'是腿不是趋势，上半部买下半部卖'},
+    {c:'47C',t:'反向交易突破',d:'第二腿陷阱，怎么等反转'},
+    {c:'47D',t:'用限价单在区间里做',d:'止盈，晚到的开盘测试，最终突破'},
+    {c:'48A',t:'交易开盘：一天分三段',d:'开盘反转'},
+    {c:'48B',t:'为什么做开盘',d:'最常见的形态，止损单更好'},
+    {c:'48C',t:'开盘的背景',d:'昨天是怎么收的'},
+    {c:'48D',t:'突破模式与前 18 根K',d:'开盘区间的突破'},
+    {c:'48E',t:'昨日高低的失败突破',d:'昨日区间突破的失败反转'},
+    {c:'48F',t:'跳空开盘',d:'早期旗形'},
+    {c:'48G',t:'交易盘中：寻找变化',d:'趋势还是一段区间中的腿'},
+    {c:'48H',t:'盘中晚到的测试',d:'80% 法则'},
+    {c:'48I',t:'交易尾盘：突破与区间',d:'尾盘通常不是通道'},
+    {c:'48J',t:'买收盘与卖收盘',d:'尾盘的做法'},
+    {c:'48K',t:'尾盘的牛熊陷阱',d:'高周期支撑阻力'},
+    {c:'49A',t:'波段实例：日内',d:'5 分钟图例子'},
+    {c:'49B',t:'波段实例：日内',d:'5 分钟图例子'},
+    {c:'49C',t:'波段实例：高周期',d:'日线级别例子'},
+    {c:'49D',t:'波段实例：高周期',d:'日线级别例子'},
+    {c:'49E',t:'日线处在买收盘或卖收盘时',d:'微通道里的日内交易'},
+    {c:'49F',t:'波段实例：综合',d:'多个案例串讲'},
+    {c:'50A',t:'剥头皮：止损还是限价',d:'区间才是限价单市场'},
+    {c:'50B',t:'新手为什么不该剥头皮',d:'两个周期配合'},
+    {c:'50C',t:'用 tick 找信号',d:'tick 背离，缺口开盘K'},
+    {c:'50D',t:'剥头皮实例',d:'案例拆解'},
+    {c:'50E',t:'剥头皮实例',d:'案例拆解'},
+    {c:'51A',t:'因为错误而亏损：心理',d:'新手亏在错误信念'},
+    {c:'51B',t:'糟糕的持仓管理',d:'怎么把好单做成坏单'},
+    {c:'51C',t:'避免大亏的规则',d:'几条硬规矩'},
+    {c:'51D',t:'正确的止损',d:'分批建仓怎么造成大亏'},
+    {c:'52A',t:'好交易走坏：需要规则',d:'所有趋势最终会让交易者失望'},
+    {c:'52B',t:'前提变了就换打法',d:'被套的交易者'}
+  ];
+
+  /* 每周的标图内容，具体到标什么 */
+  var DRAW = [
+    '把图切成段，每段标状态：突破、通道、区间、转换，四种各用一种符号。段与段的边界要写清依据。',
+    '标出每个突破点、跟随K，事后把突破分成成功、失败、假突破三类。',
+    '画出所有能画出的通道线（两条平行线），标出通道被反向突破的位置。',
+    '标出 Always In 方向的切换点，每个切换点写一句依据。',
+    '标出前高前低、均线、测量位，每张图挑 3 个有效位并写为什么有效。',
+    '标出信号K，并在旁边注明它处在区间的上部、中部还是下部。',
+    '先给图分位置区（上中下），再标形态，顺序不能反，标错顺序就重来。',
+    '把四周的图并排，只标重复出现的那个错，其他一律不写。',
+    '每个入场点旁边写三件事：胜率几成、盈亏比多少、止损放哪。',
+    '标出信号K、入场K、止损位三点连线，止损不能凭感觉放。',
+    '标出所有 H1、H2、L1、L2，并注明哪些是第一次、哪些是第二次入场。',
+    '给每个形态编号，建一张统计表，记录类型、结果、盈亏比。',
+    '标出进场、止损、目标、离场四个点，模拟单也要留痕。',
+    '标出通道内所有 H2 与 L2 入场点，标出不该追高的位置。',
+    '标出区间上下边缘，以及每一次假突破，假突破要单独统计。',
+    '把图按开盘、盘中、尾盘切成三段，分别标注每段的打法。',
+    '同一张图分别按波段和剥头皮标两遍入场，比较差别。',
+    '标出你自己的完整决策链：状态、位置、信号、下单，一条不能少。'
+  ];
+
+  var WEEKS = [
+    {w:1, stage:'阶段一 状态', n:9,  pr:'判状态：突破、通道、区间、转换', pass:'本周 10 张图切段标状态，连续 5 天不卡壳'},
+    {w:2, stage:'阶段一 状态', n:10, pr:'趋势与突破分类', pass:'成功、失败、假突破各找 5 个'},
+    {w:3, stage:'阶段一 状态', n:8,  pr:'通道与微通道', pass:'找出 3 个通道变区间并写依据'},
+    {w:4, stage:'阶段一 状态', n:6,  pr:'综合预判与三项验收', pass:'三条验收全过，不过就延长一周'},
+    {w:5, stage:'阶段二 位置', n:10, pr:'识别有效支撑阻力', pass:'每张图标出 3 个有效位并说明理由'},
+    {w:6, stage:'阶段二 位置', n:10, pr:'位置决定形态含义', pass:'同一形态在区间上中下各写一句结论'},
+    {w:7, stage:'阶段二 位置', n:10, pr:'先位置后形态', pass:'判断顺序不颠倒'},
+    {w:8, stage:'阶段二 位置', n:4,  pr:'综合标图与阶段复盘', pass:'阶段二累计 40 张里 30 张判断正确'},
+    {w:9, stage:'阶段三 下单', n:10, pr:'算交易者方程', pass:'每笔预判写出胜率与盈亏比'},
+    {w:10, stage:'阶段三 下单', n:10, pr:'入场K与止损', pass:'每个止损位能说清依据'},
+    {w:11, stage:'阶段三 下单', n:10, pr:'二次入场', pass:'H1 与 H2 的选择说得清'},
+    {w:12, stage:'阶段三 下单', n:10, pr:'形态实战统计', pass:'每类形态至少 5 个样本'},
+    {w:13, stage:'阶段三 下单', n:8,  pr:'模拟连贯做单', pass:'一周模拟 10 到 15 笔，不删亏损单'},
+    {w:14, stage:'阶段四 管理', n:10, pr:'通道内交易', pass:'通道内只在 H2 或 L2 入场'},
+    {w:15, stage:'阶段四 管理', n:10, pr:'区间内交易', pass:'区间内不追突破'},
+    {w:16, stage:'阶段四 管理', n:10, pr:'时段差异', pass:'开盘、盘中、尾盘打法分开写'},
+    {w:17, stage:'阶段四 管理', n:10, pr:'波段与剥头皮的取舍', pass:'选定一种主风格'},
+    {w:18, stage:'阶段四 管理', n:10, pr:'错单处理与输出规则', pass:'写下十条铁律，每条附自己的案例'}
+  ];
+
+  var QS = {
+    1:[{t:'c',q:'Brooks 认为市场大部分时间处在哪种状态？',o:['趋势','区间','单边突破'],a:1},
+       {t:'c',q:'Always In 指的是什么？',o:['必须一直持仓','当前方向始终在做的一边','每天都要交易'],a:1},
+       {t:'f',q:'连续大实体趋势K、几乎没有回调的行情，这种状态叫（两字）',k:['突破','通道']}],
+    2:[{t:'c',q:'Brooks 的 80% 法则之一说的是？',o:['多数突破会失败','多数突破会成功','80% 的时间在趋势里'],a:0},
+       {t:'f',q:'牛趋势的必要条件是不断抬高的（两字）',k:['低点']},
+       {t:'c',q:'突破之后最需要看到什么才有延续性？',o:['更大的K线','跟随K','成交量放大'],a:1}],
+    3:[{t:'c',q:'画一条通道线至少需要几个点？',o:['2 个','3 个','4 个'],a:0},
+       {t:'f',q:'通道演化下去，下一步通常变成（两字）',k:['区间']},
+       {t:'c',q:'紧通道里相对安全的做法是？',o:['逆势猜反转','顺势等小回调入场','不动'],a:1}],
+    4:[{t:'f',q:'判断行情的第一步是确定当前是什么（两字）',k:['状态']},
+       {t:'c',q:'区间里相对合理的做法是？',o:['追突破','边缘高抛低吸或不动','一直持仓'],a:1},
+       {t:'c',q:'第二腿陷阱通常出现在哪里？',o:['趋势初期','区间边缘的假突破','开盘第一根K'],a:1}],
+    5:[{t:'c',q:'有效的支撑阻力更像什么？',o:['一个区域','一个精确价格点','一条均线'],a:0},
+       {t:'f',q:'前高、前低、均线、测量位，都属于（四字）',k:['支撑阻力','阻力支撑']},
+       {t:'c',q:'价格第一次到达关键位，正确的态度是？',o:['立刻反向','等信号K确认','直接追'],a:1}],
+    6:[{t:'c',q:'同一个信号K出现在区间中部和边缘，含义一样吗？',o:['一样','不一样','中部更重要'],a:1},
+       {t:'f',q:'形态只有在特定的（两字）下才有意义',k:['位置']},
+       {t:'c',q:'逆势交易对信号K的要求是？',o:['可以弱','必须强','不需要'],a:1}],
+    7:[{t:'f',q:'判断顺序应该先写（两字），再找形态',k:['位置']},
+       {t:'c',q:'区间中部出现 H2，最合理的是？',o:['直接买','放弃，等边缘','加倍仓位'],a:1},
+       {t:'c',q:'识别形态的前提是？',o:['背下二十种名字','先知道在趋势还是区间','看指标'],a:1}],
+    8:[{t:'f',q:'阶段复盘只看一个东西，就是重复出现的（两字）',k:['错']},
+       {t:'c',q:'阶段二的判断正确率目标是？',o:['九成以上','累计 40 张里 30 张','全部正确'],a:1},
+       {t:'c',q:'20 张只对了 10 张，应该？',o:['继续往前学','回补对应周次','换一套方法'],a:1}],
+    9:[{t:'f',q:'交易者方程判断的是胜率乘以（三字）',k:['盈亏比','赔率']},
+       {t:'c',q:'四成胜率下，盈亏比至少要多少才值得做？',o:['1 比 1','2 比 1','0.5 比 1'],a:1},
+       {t:'c',q:'Brooks 说多数交易失败的概率至少是多少？',o:['两成','四成','六成'],a:1}],
+    10:[{t:'c',q:'止损位应该放在哪里？',o:['信号K另一端之外','固定十个点','凭感觉'],a:0},
+        {t:'f',q:'入场K指的是信号K之后的第（一/二）根',k:['一','1','下一']},
+        {t:'c',q:'方向没错但止损被扫，多半是？',o:['止损放太紧','方向错了','不该设止损'],a:0}],
+    11:[{t:'f',q:'H2 指的是第（一/二/三）次回调后的买点',k:['二','2','两']},
+        {t:'c',q:'Brooks 偏向第二次入场的主要原因是？',o:['概率更高','价格更便宜','成交更快'],a:0},
+        {t:'c',q:'H1 与 H2 的关系是？',o:['完全无关','H2 是 H1 之后的再次回调买点','H2 比 H1 差'],a:1}],
+    12:[{t:'f',q:'形态实战要用（两字）来验证，不能靠感觉',k:['统计','样本']},
+        {t:'c',q:'每类形态至少需要几个样本才有参考价值？',o:['2 个','5 个','50 个'],a:1},
+        {t:'c',q:'发现胜率最低的那一类形态，应该？',o:['直接删掉','写清原因再决定','加倍去做'],a:1}],
+    13:[{t:'f',q:'模拟做单的记录不能删（两字）单',k:['亏损','亏']},
+        {t:'c',q:'这一周模拟多少笔比较合适？',o:['3 笔','10 到 15 笔','100 笔'],a:1},
+        {t:'c',q:'开始连续做单时，建议提前看哪一部分？',o:['49 到 50','51 到 52 亏损管理','加餐视频'],a:1}],
+    14:[{t:'c',q:'通道里相对正确的入场是？',o:['追新高','回调到 H2 或 L2','反向加仓'],a:1},
+        {t:'f',q:'通道被反向突破后，通常演化为（两字）',k:['区间']},
+        {t:'c',q:'紧通道里最危险的动作是？',o:['顺势','逆势猜反转','等待'],a:1}],
+    15:[{t:'c',q:'区间里最不该做的是？',o:['边缘反向','追突破','等待'],a:1},
+        {t:'f',q:'多数区间突破最终会（两字）',k:['失败','回调']},
+        {t:'c',q:'区间的两个边缘通常对应？',o:['随机位置','支撑与阻力','均线'],a:1}],
+    16:[{t:'c',q:'开盘阶段最常见的形态是？',o:['窄幅不动','突破模式、跳空、早期旗形','只走区间'],a:1},
+        {t:'f',q:'尾盘买收盘的英文缩写是（三字）',k:['btc']},
+        {t:'c',q:'盘中判断的重点是？',o:['趋势还是区间中的一腿','成交量','新闻'],a:0}],
+    17:[{t:'c',q:'Brooks 对新手的建议更偏向？',o:['剥头皮','波段','两个同时做'],a:1},
+        {t:'f',q:'区间本质上是（三字）市场',k:['限价单']},
+        {t:'c',q:'两种风格能不能同时做？',o:['能，但容易乱','必须同时','完全一样'],a:0}],
+    18:[{t:'c',q:'多数亏损的主要原因是？',o:['看不懂图','错误入场或糟糕的持仓管理','运气'],a:1},
+        {t:'f',q:'当交易的（两字）变了，就该换打法或离场',k:['前提']},
+        {t:'c',q:'Brooks 说所有趋势最终会？',o:['一直延续','让交易者失望','变成直线'],a:1}]
+  };
+
+  /* ---------- 时间与存储 ---------- */
+  function pad(n){ return ('0' + n).slice(-2); }
+  function fmt(d){ return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+  function todayKey(){ return fmt(new Date()); }
+  function parseDate(s){ var p = s.split('-'); return new Date(+p[0], +p[1]-1, +p[2]); }
+  function addDays(s, n){ var d = parseDate(s); d.setDate(d.getDate() + n); return fmt(d); }
+  function diffDays(a, b){ return Math.round((parseDate(a) - parseDate(b)) / 86400000); }
+
+  function blank(){ return {startDate: todayKey(), records:{}, wrongPool:[], weeks:[]}; }
+
+  var state, memOnly = false, FILE_MODE = false, saveTimer = null;
+
+  function normalize(s){
+    if(!s || typeof s !== 'object') return blank();
+    if(!s.records) s.records = {};
+    if(!s.wrongPool) s.wrongPool = [];
+    if(!s.weeks) s.weeks = [];
+    if(!s.startDate) s.startDate = todayKey();
+    return s;
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(raw) return normalize(JSON.parse(raw));
+    }catch(e){ memOnly = true; }
+    return blank();
+  }
+
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch(e){ memOnly = true; }
+    if(FILE_MODE){
+      if(saveTimer) clearTimeout(saveTimer);
+      saveTimer = setTimeout(pushFile, 500);
+    }
+  }
+
+  function pushFile(){
+    fetch('/api/data', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(state)
+    }).then(function(r){
+      if(!r.ok) throw new Error('bad');
+      var tip = document.getElementById('saveTip');
+      if(tip) tip.textContent = '已写入 data/records.json　' + new Date().toTimeString().slice(0, 8);
+    }).catch(function(){
+      var tip = document.getElementById('saveTip');
+      if(tip) tip.textContent = '写文件失败，服务可能已经关了。数据还在浏览器里，重启服务后改动任意一项会自动重写。';
+    });
+  }
+
+  function setModeTag(){
+    var t = document.getElementById('modeTag');
+    var tip = document.getElementById('saveTip');
+    if(!t) return;
+    if(FILE_MODE){
+      t.textContent = '文件存储';
+      t.className = 'mode file';
+      t.title = '数据实时写入 data/records.json，可以直接 git 提交';
+      if(tip) tip.textContent = '当前模式：文件存储，改一个字就会自动写进 data/records.json。';
+    } else {
+      t.textContent = '浏览器本地';
+      t.className = 'mode';
+      t.title = '没连上本地服务';
+      if(tip) tip.textContent = '当前模式：浏览器本地。想要文件存储，在目录里运行 python pa_server.py，然后从它打开的地址访问。';
+    }
+  }
+
+  function tryLoadFile(){
+    if(typeof fetch !== 'function'){ setModeTag(); return; }
+    fetch('/api/data').then(function(r){
+      if(!r.ok) throw new Error('no');
+      return r.json();
+    }).then(function(d){
+      if(!d || typeof d !== 'object' || !d.records) throw new Error('bad');
+      state = normalize(d);
+      FILE_MODE = true;
+      curIdx = nextPendingIdx();
+      renderAll();
+      setModeTag();
+    }).catch(function(){
+      setModeTag();
+    });
+  }
+
+  function commitGit(){
+    if(!FILE_MODE){ toast('先运行 pa_server.py，从 localhost 打开才能提交'); return; }
+    var d = new Date();
+    var msg = '学习记录 ' + fmt(d) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    fetch('/api/commit', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({msg: msg})
+    }).then(function(r){ return r.json(); }).then(function(j){
+      toast(j.ok ? ('已提交：' + j.message) : ('没提交成功：' + j.message));
+    }).catch(function(){
+      toast('提交失败，服务没响应');
+    });
+  }
+  function rec(key, create){
+    if(!state.records[key]){
+      if(!create) return null;
+      state.records[key] = {done:{}, notes:'', quiz:null};
+    }
+    return state.records[key];
+  }
+
+  /* ---------- 排期 ---------- */
+  function weekOf(i){ return Math.floor(i / 7); }
+  function dowOf(i){ return i % 7; }
+
+  function splitEpisodes(n){
+    var base = Math.floor(n/5), rem = n%5, arr = [], i;
+    for(i=0;i<5;i++) arr.push(base + (i < rem ? 1 : 0));
+    return arr;
+  }
+
+  /* 每周对应的集号切片 */
+  var WEEK_START = (function(){
+    var out = [], acc = 0, i;
+    for(i=0;i<WEEKS.length;i++){ out.push(acc); acc += WEEKS[i].n; }
+    return out;
+  })();
+
+  function weekEpisodes(wi){
+    var st = WEEK_START[wi];
+    return EPISODES.slice(st, st + WEEKS[wi].n);
+  }
+
+  function dayEpisodes(wi, dow){
+    if(dow > 4) return [];
+    var all = weekEpisodes(wi), sp = splitEpisodes(WEEKS[wi].n);
+    var from = 0, i;
+    for(i=0;i<dow;i++) from += sp[i];
+    return all.slice(from, from + sp[dow]);
+  }
+
+  function tasksOf(idx){
+    if(idx < 0 || idx >= DAYS_TOTAL) return null;
+    var wi = weekOf(idx), dow = dowOf(idx), wk = WEEKS[wi];
+    var list = [];
+
+    if(dow <= 4){
+      var eps = dayEpisodes(wi, dow);
+      if(eps.length){
+        list.push({id:'watch', t:'看课 ' + eps.length + ' 集', eps:eps});
+      }
+      list.push({id:'draw', t:'标 1 张图', d:DRAW[wi]});
+      list.push({id:'quiz', t:'今日答题', d:'做完下面三道题，提交后立即判分，错题会进次日重考。'});
+    } else if(dow === 5){
+      list.push({id:'draw', t:'补标 5 张图', d:'把本周欠下的图清完。' + DRAW[wi]});
+      list.push({id:'review', t:'回看难点片段', d:'本周没听懂的地方只看 5 到 8 分钟片段，不要整集重看。'});
+      list.push({id:'quiz', t:'今日答题', d:'周末加练，提交后立即判分。'});
+    } else {
+      list.push({id:'review', t:'本周 10 张图并排复盘', d:'只看重复出现的那个错，写一条规律，不要逐张写感受。'});
+      list.push({id:'notes', t:'写本周一条规律', d:'用一句话写清这周最常犯的错，填到今日知识点。'});
+    }
+    return {week:wi, dow:dow, list:list};
+  }
+
+  function isDoneAll(key){
+    var r = rec(key, false);
+    if(!r) return false;
+    var info = tasksOf(diffDays(key, state.startDate));
+    if(!info) return false;
+    var i;
+    for(i=0;i<info.list.length;i++){
+      if(!r.done[info.list[i].id]) return false;
+    }
+    return true;
+  }
+
+  function nextPendingIdx(){
+    var i;
+    for(i=0;i<DAYS_TOTAL;i++){
+      if(!isDoneAll(addDays(state.startDate, i))) return i;
+    }
+    return DAYS_TOTAL;
+  }
+  function completedDays(){
+    var n = 0, i;
+    for(i=0;i<DAYS_TOTAL;i++){ if(isDoneAll(addDays(state.startDate, i))) n++; }
+    return n;
+  }
+
+  /* 已看集数，按勾选看课时存下的 eps 统计 */
+  function watchedCount(){
+    var n = 0;
+    Object.keys(state.records).forEach(function(k){
+      var r = state.records[k];
+      if(r.eps && r.eps.length) n += r.eps.length;
+    });
+    return n;
+  }
+  function streak(){
+    var n = 0, i = diffDays(todayKey(), state.startDate);
+    if(i < 0) return 0;
+    for(; i>=0; i--){
+      if(isDoneAll(addDays(state.startDate, i))) n++;
+      else break;
+    }
+    return n;
+  }
+
+  /* ---------- 通用 ---------- */
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if(cls) n.className = cls;
+    if(text !== undefined) n.textContent = text;
+    return n;
+  }
+  function toast(msg){
+    var t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('on');
+    setTimeout(function(){ t.classList.remove('on'); }, 1800);
+  }
+  var curIdx = 0;
+
+  /* ---------- 渲染 ---------- */
+  function renderHead(){
+    var d = new Date();
+    var wk = ['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+    document.getElementById('headDate').textContent =
+      d.getFullYear() + ' 年 ' + (d.getMonth()+1) + ' 月 ' + d.getDate() + ' 日　' + wk +
+      '　计划从 ' + state.startDate + ' 起，共 126 天';
+  }
+
+  function renderStats(){
+    var done = completedDays();
+    var wi = weekOf(Math.min(curIdx, DAYS_TOTAL-1));
+    document.getElementById('stWeek').innerHTML = '第 ' + (wi+1) + ' 周 <small>' + WEEKS[wi].stage + '</small>';
+    document.getElementById('stStreak').innerHTML = streak() + ' <small>天</small>';
+    var todayIdx = diffDays(todayKey(), state.startDate);
+    var back = todayIdx > curIdx ? todayIdx - curIdx : 0;
+    document.getElementById('stBack').innerHTML = back + ' <small>天</small>';
+    document.getElementById('stBackWrap').className = back > 0 ? 'stat warn' : 'stat';
+    document.getElementById('stPct').innerHTML = watchedCount() + '<small>/165</small>';
+    document.getElementById('stPctK').textContent = '已看集数　进度 ' + Math.round(done / DAYS_TOTAL * 100) + '%';
+  }
+
+  function epNode(ep){
+    var d = el('div','ep');
+    d.appendChild(el('b', null, ep.c));
+    d.appendChild(document.createTextNode(ep.t));
+    if(ep.d) d.appendChild(el('i', null, ep.d));
+    return d;
+  }
+
+  function renderToday(){
+    var card = document.getElementById('todayCard');
+    card.innerHTML = '';
+
+    if(curIdx >= DAYS_TOTAL){
+      card.appendChild(el('div','empty','十八周全部完成。最后一步：把十八周的错因归一次类，写成你的十条铁律。'));
+      document.getElementById('todayTag').textContent = '';
+      renderTomorrow();
+      return;
+    }
+
+    var info = tasksOf(curIdx), key = addDays(state.startDate, curIdx), r = rec(key, true);
+    var shifted = diffDays(todayKey(), key);
+
+    var tag = '第 ' + (info.week+1) + ' 周 · ' + ['周一','周二','周三','周四','周五','周六','周日'][info.dow] + ' · ' + key;
+    if(shifted > 0) tag += '　顺延 ' + shifted + ' 天';
+    document.getElementById('todayTag').textContent = tag;
+
+    info.list.forEach(function(item){
+      var row = el('div','taskrow');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!r.done[item.id];
+      if(cb.checked) row.classList.add('done');
+      var body = el('div','body');
+      body.appendChild(el('div','t', item.t));
+
+      if(item.eps && item.eps.length){
+        var list = el('div','eplist');
+        item.eps.forEach(function(ep){ list.appendChild(epNode(ep)); });
+        body.appendChild(list);
+      }
+      if(item.d) body.appendChild(el('div','d', item.d));
+
+      row.appendChild(cb); row.appendChild(body);
+
+      cb.addEventListener('change', function(){
+        r.done[item.id] = cb.checked;
+        if(item.id === 'watch' && item.eps){
+          r.eps = cb.checked ? item.eps.map(function(x){ return x.c; }) : [];
+        }
+        row.classList.toggle('done', cb.checked);
+        save(); renderStats(); renderCal(); renderHistory(); renderWrong();
+        if(cb.checked && isDoneAll(key)){
+          toast('这天完成，进度已推进');
+          curIdx = nextPendingIdx();
+          renderToday(); renderTomorrow(); renderStats(); renderCal(); buildQuiz();
+        }
+      });
+      card.appendChild(row);
+    });
+
+    var pass = el('div','note','本周过关标准：' + WEEKS[info.week].pass);
+    pass.style.marginTop = '10px';
+    card.appendChild(pass);
+
+    var acts = el('div','flex');
+    acts.style.marginTop = '10px';
+    var b1 = el('button','btn sm','这天空着，顺延');
+    b1.type = 'button';
+    b1.addEventListener('click', function(){
+      info.list.forEach(function(item){ r.done[item.id] = true; });
+      r.skipped = true;
+      save();
+      curIdx = nextPendingIdx();
+      renderToday(); renderTomorrow(); renderStats(); renderCal(); renderHistory(); buildQuiz();
+      toast('已顺延到下一天');
+    });
+    acts.appendChild(b1);
+    var b2 = el('button','btn sm ghost','跳到本周起点');
+    b2.type = 'button';
+    b2.addEventListener('click', function(){
+      curIdx = weekOf(curIdx) * 7;
+      renderToday(); renderTomorrow(); renderStats(); buildQuiz();
+      toast('已跳回本周第一天');
+    });
+    acts.appendChild(b2);
+    card.appendChild(acts);
+    renderReview(card);
+  }
+
+  function renderTomorrow(){
+    var box = document.getElementById('tomorrowCard');
+    box.innerHTML = '';
+    var idx = curIdx;
+    if(idx >= DAYS_TOTAL - 1){ box.appendChild(el('div','empty','后面没有新内容了。')); return; }
+    var info = tasksOf(idx + 1), key = addDays(state.startDate, idx + 1);
+    box.appendChild(el('div','note','明天　' + key + '　第 ' + (info.week+1) + ' 周'));
+    info.list.forEach(function(item){
+      var wrap = el('div');
+      wrap.style.marginTop = '8px';
+      wrap.appendChild(el('div','t', item.t)).style.fontWeight = '600';
+      if(item.eps && item.eps.length){
+        var list = el('div','eplist');
+        item.eps.forEach(function(ep){
+          var d = el('div','ep');
+          d.appendChild(el('b', null, ep.c));
+          d.appendChild(document.createTextNode(ep.t));
+          list.appendChild(d);
+        });
+        wrap.appendChild(list);
+      }
+      if(item.d) wrap.appendChild(el('div','note', item.d));
+      box.appendChild(wrap);
+    });
+  }
+
+  /* ---------- 标图记录 ---------- */
+  function findEp(code){
+    for(var i=0;i<EPISODES.length;i++){ if(EPISODES[i].c === code) return EPISODES[i]; }
+    return null;
+  }
+
+  /* ---------- 图片 ---------- */
+  var pendingImgs = [];
+
+  function imgSrcOf(v){
+    if(!v) return '';
+    return v.indexOf('data:') === 0 ? v : '/' + v;
+  }
+
+  function renderThumbs(){
+    var box = document.getElementById('thumbs');
+    if(!box) return;
+    box.innerHTML = '';
+    pendingImgs.forEach(function(it, i){
+      var d = el('div','thumb');
+      var img = document.createElement('img');
+      img.src = it.src;
+      img.title = '点击看大图';
+      img.addEventListener('click', function(){ window.open(it.src, '_blank'); });
+      var del = el('span','del','删');
+      del.title = '移出这张';
+      del.addEventListener('click', function(){
+        pendingImgs.splice(i, 1);
+        renderThumbs();
+      });
+      d.appendChild(img);
+      d.appendChild(del);
+      box.appendChild(d);
+    });
+  }
+
+  function compressImg(dataUrl, cb){
+    try{
+      var cv = document.createElement('canvas');
+      if(!cv.getContext || !cv.getContext('2d')){ cb(dataUrl); return; }
+      var img = new Image();
+      img.onload = function(){
+        var max = 1280, w = img.width, h = img.height;
+        if(w > max){ h = Math.round(h * max / w); w = max; }
+        cv.width = w; cv.height = h;
+        cv.getContext('2d').drawImage(img, 0, 0, w, h);
+        try { cb(cv.toDataURL('image/jpeg', 0.75)); }
+        catch(e){ cb(dataUrl); }
+      };
+      img.onerror = function(){ cb(dataUrl); };
+      img.src = dataUrl;
+    }catch(e){ cb(dataUrl); }
+  }
+
+  function addFiles(files){
+    Array.prototype.forEach.call(files, function(f){
+      if(!f || !f.type || f.type.indexOf('image/') !== 0){ toast('只能传图片文件'); return; }
+      var fr = new FileReader();
+      fr.onload = function(){
+        var dataUrl = fr.result;
+        if(FILE_MODE){
+          var dayKey = addDays(state.startDate, curIdx);
+          var tag = document.getElementById('chState').value || '';
+          fetch('/api/upload', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({dataUrl: dataUrl, date: dayKey, tag: tag})
+          }).then(function(r){ return r.json(); }).then(function(j){
+            if(!j.ok){ toast('上传失败：' + (j.error || '未知原因')); return; }
+            pendingImgs.push({src: imgSrcOf(j.file), file: j.file});
+            renderThumbs();
+            toast('已存到 ' + j.file);
+          }).catch(function(){ toast('上传失败，服务没响应'); });
+        } else {
+          compressImg(dataUrl, function(small){
+            pendingImgs.push({src: small, file: ''});
+            renderThumbs();
+            toast('已加入，浏览器模式下图片存在本地数据里');
+          });
+        }
+      };
+      fr.readAsDataURL(f);
+    });
+  }
+
+  function renderSavedImgs(){
+    var box = document.getElementById('savedThumbs');
+    if(!box) return;
+    box.innerHTML = '';
+    var key = addDays(state.startDate, curIdx);
+    var r = rec(key, false);
+    var arr = (r && r.charts) ? r.charts : [];
+    var total = 0;
+    arr.forEach(function(c){
+      (c.imgs || []).forEach(function(v){
+        total++;
+        var d = el('div','thumb');
+        var img = document.createElement('img');
+        img.src = imgSrcOf(v);
+        img.title = '点击看大图　' + (c.state || '');
+        img.addEventListener('click', function(){ window.open(imgSrcOf(v), '_blank'); });
+        d.appendChild(img);
+        if(c.state){
+          var cap = el('div','cap', c.state + (c.err ? ' ' + c.err : ''));
+          d.appendChild(cap);
+        }
+        box.appendChild(d);
+      });
+    });
+    if(!total) box.innerHTML = '';
+  }
+
+  function renderChartForm(){
+    var key = addDays(state.startDate, curIdx);
+    var r = rec(key, true) || {};
+    var c = r.chart || {};
+    document.getElementById('chName').value = c.name || '';
+    document.getElementById('chState').value = c.state || '';
+    document.getElementById('chAI').value = c.ai || '';
+    document.getElementById('chWait').value = c.wait || '';
+    document.getElementById('chErr').value = c.err || '';
+    document.getElementById('chNote').value = c.note || '';
+    var n = (r.charts && r.charts.length) || 0;
+    document.getElementById('chartTip').textContent = '当天已存 ' + n + ' 张，点标签可删除';
+    var dayKey = addDays(state.startDate, curIdx);
+    var ip = document.getElementById('imgPath');
+    if(ip){
+      ip.textContent = FILE_MODE
+        ? '图片存放：data\\img\\' + dayKey + '\\　命名格式：' + dayKey + '_时分_状态_毫秒.png'
+        : '浏览器模式下图片压进浏览器存储，不落文件夹。想看文件，启动服务后从 localhost 打开。';
+    }
+    var ob = document.getElementById('btnOpenImg');
+    if(ob) ob.style.display = FILE_MODE ? 'inline-block' : 'none';
+    renderChartList();
+    renderSavedImgs();
+    renderThumbs();
+    renderErrStat();
+  }
+
+  function renderErrStat(){
+    var cnt = {}, total = 0;
+    Object.keys(state.records).forEach(function(k){
+      var cs = state.records[k].charts || [];
+      cs.forEach(function(c){
+        total++;
+        if(c.err) cnt[c.err] = (cnt[c.err] || 0) + 1;
+      });
+    });
+    var box = document.getElementById('errStat');
+    if(!box) return;
+    if(!total){
+      box.textContent = '还没有标图记录。填满一周后这里会显示错因分布，用来看你重复犯的是哪一类。';
+      return;
+    }
+    var order = ['状态判错','位置判错','没等到','判断正确','其他'];
+    var parts = [];
+    order.forEach(function(x){ if(cnt[x]) parts.push(x + ' ' + cnt[x]); });
+    box.textContent = '累计 ' + total + ' 张　' + parts.join('　') + '　占比最高的那一类，就是下一周唯一要改的';
+  }
+
+  function renderChartList(){
+    var box = document.getElementById('chartList');
+    box.innerHTML = '';
+    var key = addDays(state.startDate, curIdx);
+    var r = rec(key, false);
+    var arr = (r && r.charts) ? r.charts : [];
+    arr.forEach(function(c, i){
+      var chip = el('span','chip');
+      chip.appendChild(el('b', null, c.state || '未填状态'));
+      var extra = [];
+      if(c.ai) extra.push(c.ai);
+      if(c.err) extra.push(c.err);
+      chip.appendChild(document.createTextNode(' ' + extra.join(' · ')));
+      if(c.note) chip.appendChild(el('i', null, ' ' + c.note));
+      chip.title = '点一下删除';
+      chip.style.cursor = 'pointer';
+      chip.addEventListener('click', function(){
+        arr.splice(i, 1);
+        r.charts = arr;
+        save(); renderChartForm(); renderHistory();
+      });
+      box.appendChild(chip);
+    });
+  }
+
+  function saveChart(){
+    var key = addDays(state.startDate, curIdx);
+    var r = rec(key, true);
+    if(!r.charts) r.charts = [];
+    var c = {
+      name: document.getElementById('chName').value.trim(),
+      state: document.getElementById('chState').value,
+      ai: document.getElementById('chAI').value,
+      wait: document.getElementById('chWait').value.trim(),
+      err: document.getElementById('chErr').value,
+      note: document.getElementById('chNote').value.trim()
+    };
+    if(!c.state && !c.ai && !c.err && !c.note && !pendingImgs.length){ toast('至少填一项，或者加一张图'); return; }
+    c.imgs = pendingImgs.map(function(x){ return x.file || x.src; });
+    r.charts.push(c);
+    save();
+    pendingImgs = [];
+    document.getElementById('chName').value = '';
+    document.getElementById('chWait').value = '';
+    document.getElementById('chNote').value = '';
+    renderChartForm(); renderHistory(); renderThumbs();
+    toast('已存第 ' + r.charts.length + ' 张');
+  }
+
+  /* 按遗忘点回看：3 天、7 天、15 天前真正学过的集 */
+  function reviewItems(){
+    var out = [], gaps = [3, 7, 15], i;
+    var todayIdx = Math.min(diffDays(todayKey(), state.startDate), DAYS_TOTAL);
+    for(i = 0; i < gaps.length; i++){
+      var gi = todayIdx - gaps[i];
+      if(gi < 0) continue;
+      var k = addDays(state.startDate, gi);
+      var r = rec(k, false);
+      if(r && r.eps && r.eps.length) out.push({gap: gaps[i], date: k, eps: r.eps});
+    }
+    return out;
+  }
+
+  function renderReview(card){
+    var rev = reviewItems();
+    if(!rev.length) return;
+    var rb = el('div','reviewbox');
+    rb.appendChild(el('div','rt','按遗忘点该回看'));
+    rev.forEach(function(g){
+      g.eps.forEach(function(code){
+        var line = el('div','revline');
+        line.appendChild(el('b', null, code));
+        var ep = findEp(code);
+        if(ep) line.appendChild(document.createTextNode(ep.t));
+        line.appendChild(el('i', null, g.gap + ' 天前学过'));
+        rb.appendChild(line);
+      });
+    });
+    card.appendChild(rb);
+  }
+
+  /* ---------- 错题本 ---------- */
+  function renderWrong(){
+    var box = document.getElementById('wrongBox');
+    box.innerHTML = '';
+    var pool = state.wrongPool || [];
+    document.getElementById('wrongTag').textContent = pool.length ? (pool.length + ' 道待重考') : '没有错题';
+    if(!pool.length){
+      box.appendChild(el('div','empty','答错的题会自动进这里，次日答对后自动移除。'));
+      return;
+    }
+    pool.forEach(function(id){
+      var p = id.split('-');
+      var w = parseInt(p[0],10), qi = parseInt(p[1],10);
+      var q = QS[w] && QS[w][qi];
+      if(!q) return;
+      var item = el('div','wrongitem');
+      var qt = el('div','wt');
+      qt.appendChild(el('b', null, '第' + w + '周第' + (qi+1) + '题　'));
+      qt.appendChild(document.createTextNode(q.q));
+      item.appendChild(qt);
+      item.appendChild(el('div','wa','答案：' + refText(q)));
+      var bar = el('div','wm');
+      var b = el('button','btn sm ghost','移除');
+      b.type = 'button';
+      b.addEventListener('click', function(){
+        var i = state.wrongPool.indexOf(id);
+        if(i > -1) state.wrongPool.splice(i,1);
+        save(); renderWrong(); toast('已移除');
+      });
+      bar.appendChild(b);
+      item.appendChild(bar);
+      box.appendChild(item);
+    });
+  }
+
+  /* ---------- 答题 ---------- */
+  var quizState = {items:[], answers:{}, locked:false};
+
+  function checkOne(q, ans){
+    if(ans === undefined || ans === null || ans === '') return false;
+    if(q.t === 'c') return Number(ans) === q.a;
+    var s = String(ans).toLowerCase().replace(/\s/g,''), hit = false;
+    q.k.forEach(function(k){ if(s.indexOf(k.toLowerCase()) > -1) hit = true; });
+    return hit;
+  }
+  function refText(q){ return q.t === 'c' ? q.o[q.a] : q.k[0]; }
+
+  function buildQuiz(){
+    quizState = {items:[], answers:{}, locked:false};
+    var box = document.getElementById('quizBox');
+    box.innerHTML = '';
+    document.getElementById('quizScore').textContent = '';
+
+    if(curIdx >= DAYS_TOTAL){ box.appendChild(el('div','empty','没有题目了。')); return; }
+
+    var wi = weekOf(curIdx);
+    var bank = QS[wi+1] || [];
+    var pick = [], seen = [];
+    var topic = bank[curIdx % bank.length];
+    if(topic){ pick.push(topic); seen.push(topic); }
+
+    var pool = state.wrongPool || [], j;
+    for(j = 0; j < pool.length && pick.length < 3; j++){
+      var parts = pool[j].split('-');
+      var pw = parseInt(parts[0],10), pi = parseInt(parts[1],10);
+      var wq = QS[pw] && QS[pw][pi];
+      if(!wq) continue;
+      if(seen.indexOf(wq) > -1) continue;
+      seen.push(wq);
+      pick.push(wq);
+    }
+
+    var key = addDays(state.startDate, curIdx), r = rec(key, true);
+
+    pick.forEach(function(q, i){
+      quizState.items.push(q);
+      var card = el('div','quiz');
+      var qt = el('div','qtext');
+      qt.appendChild(el('span','qno','第 ' + (i+1) + ' 题'));
+      qt.appendChild(document.createTextNode(q.q));
+      card.appendChild(qt);
+
+      if(q.t === 'c'){
+        q.o.forEach(function(opt, oi){
+          var lab = el('label','opt');
+          var rd = document.createElement('input');
+          rd.type = 'radio'; rd.name = 'q' + i; rd.value = String(oi);
+          if(r.quiz && r.quiz.answers && r.quiz.answers[i] === oi){ rd.checked = true; quizState.answers[i] = oi; }
+          rd.addEventListener('change', function(){ quizState.answers[i] = oi; });
+          lab.appendChild(rd); lab.appendChild(el('span', null, opt));
+          card.appendChild(lab);
+        });
+      } else {
+        var inp = document.createElement('input');
+        inp.type = 'text'; inp.style.width = '100%'; inp.placeholder = '填关键词';
+        if(r.quiz && r.quiz.answers && r.quiz.answers[i] !== undefined){
+          inp.value = r.quiz.answers[i]; quizState.answers[i] = r.quiz.answers[i];
+        }
+        inp.addEventListener('input', function(){ quizState.answers[i] = inp.value; });
+        card.appendChild(inp);
+      }
+      card.id = 'qcard' + i;
+      box.appendChild(card);
+    });
+
+    if(r.quiz && r.quiz.score !== undefined){
+      quizState.locked = true;
+      document.getElementById('quizScore').innerHTML = '得分 <b>' + r.quiz.score + '</b> / ' + pick.length;
+      markAll(pick, r.quiz.answers || {});
+    }
+  }
+
+  function markAll(items, answers){
+    items.forEach(function(q, i){
+      var card = document.getElementById('qcard' + i);
+      if(!card) return;
+      var ok = checkOne(q, answers[i]);
+      card.appendChild(el('div','fb ' + (ok ? 'ok' : 'bad'), ok ? '对' : ('错。参考答案：' + refText(q))));
+    });
+  }
+
+  function submitQuiz(){
+    if(quizState.locked){ toast('今天已经交过，点重做可以再答一次'); return; }
+    if(!quizState.items.length) return;
+    var score = 0, answers = {}, wrongNow = [];
+
+    quizState.items.forEach(function(q, i){
+      answers[i] = quizState.answers[i];
+      if(checkOne(q, quizState.answers[i])) score++;
+      else wrongNow.push(q);
+    });
+
+    var key = addDays(state.startDate, curIdx), r = rec(key, true);
+    r.quiz = {answers:answers, score:score};
+
+    wrongNow.forEach(function(q){
+      Object.keys(QS).forEach(function(k){
+        QS[k].forEach(function(item, j){
+          if(item === q){
+            var id = k + '-' + j;
+            if(state.wrongPool.indexOf(id) === -1) state.wrongPool.push(id);
+          }
+        });
+      });
+    });
+
+    /* 重考的题答对就从池里移除 */
+    for(var i2 = 1; i2 < quizState.items.length; i2++){
+      var q2 = quizState.items[i2];
+      if(!checkOne(q2, quizState.answers[i2])) continue;
+      for(var j2 = 0; j2 < state.wrongPool.length; j2++){
+        var pp = state.wrongPool[j2].split('-');
+        var pw2 = parseInt(pp[0],10), pi2 = parseInt(pp[1],10);
+        var qq = QS[pw2] && QS[pw2][pi2];
+        if(qq === q2){ state.wrongPool.splice(j2, 1); break; }
+      }
+    }
+
+    save();
+    quizState.locked = true;
+    document.getElementById('quizScore').innerHTML = '得分 <b>' + score + '</b> / ' + quizState.items.length;
+    markAll(quizState.items, answers);
+    renderHistory(); renderWrong();
+    toast(score === quizState.items.length ? '全部答对' : '错题已进次日重考');
+  }
+
+  /* ---------- 日历 ---------- */
+  function renderCal(){
+    var box = document.getElementById('cal');
+    box.innerHTML = '';
+    ['一','二','三','四','五','六','日'].forEach(function(d){
+      box.appendChild(el('div','hd','周' + d));
+    });
+
+    var todayIdx = diffDays(todayKey(), state.startDate);
+    if(todayIdx < 0) todayIdx = 0;
+    var weekStart = todayIdx - dowOf(todayIdx);
+    var begin = Math.max(0, weekStart - 7);
+    if(begin > DAYS_TOTAL - 14) begin = Math.max(0, DAYS_TOTAL - 14);
+
+    for(var i = begin; i < begin + 14 && i < DAYS_TOTAL; i++){
+      var key = addDays(state.startDate, i);
+      var cell = el('div','d');
+      if(i === todayIdx) cell.classList.add('today');
+      if(i > todayIdx){ cell.classList.add('future'); }
+      else if(i < todayIdx){
+        if(isDoneAll(key)) cell.classList.add('done');
+        else cell.classList.add('miss');
+      }
+
+      cell.appendChild(el('div','n', (weekOf(i)+1) + '周' + ['一','二','三','四','五','六','日'][dowOf(i)]));
+      var info = tasksOf(i);
+      var lab = el('div','lab');
+      if(i > todayIdx) lab.textContent = '待开始';
+      else if(isDoneAll(key)) lab.textContent = '完成';
+      else lab.textContent = '欠';
+      cell.appendChild(lab);
+      cell.title = key + '　' + (info ? WEEKS[info.week].pr : '');
+      box.appendChild(cell);
+    }
+  }
+
+  /* ---------- 总表 ---------- */
+  function renderPlan(){
+    var box = document.getElementById('planTable');
+    box.innerHTML = '';
+    var t = document.createElement('table');
+    var thead = document.createElement('thead');
+    var hr = document.createElement('tr');
+    ['周次','本周集号与标题','本周练什么','过关标准','完成'].forEach(function(x, i){
+      var th = document.createElement('th'); th.textContent = x;
+      if(i === 0 || i === 4) th.className = 'c';
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr); t.appendChild(thead);
+
+    var tb = document.createElement('tbody'), last = '';
+    WEEKS.forEach(function(wk, i){
+      if(wk.stage !== last){
+        last = wk.stage;
+        var sr = document.createElement('tr'); sr.className = 'stage-row';
+        var sd = document.createElement('td'); sd.colSpan = 5; sd.textContent = wk.stage;
+        sr.appendChild(sd); tb.appendChild(sr);
+      }
+      var tr = document.createElement('tr');
+      var c1 = document.createElement('td'); c1.className = 'c'; c1.textContent = '第 ' + wk.w + ' 周';
+      var c2 = document.createElement('td');
+      var list = el('div','eplist');
+      weekEpisodes(i).forEach(function(ep){
+        var d = el('div','ep');
+        d.appendChild(el('b', null, ep.c));
+        d.appendChild(document.createTextNode(ep.t));
+        list.appendChild(d);
+      });
+      c2.appendChild(list);
+      var c3 = document.createElement('td'); c3.textContent = wk.pr;
+      var c4 = document.createElement('td'); c4.textContent = wk.pass;
+      var c5 = document.createElement('td'); c5.className = 'c';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!state.weeks[i];
+      cb.addEventListener('change', function(){ state.weeks[i] = cb.checked; save(); });
+      c5.appendChild(cb);
+      tr.appendChild(c1); tr.appendChild(c2); tr.appendChild(c3); tr.appendChild(c4); tr.appendChild(c5);
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); box.appendChild(t);
+
+    var n = state.weeks.filter(Boolean).length;
+    document.getElementById('planSummary').textContent = '展开查看每周看哪几集、练什么、过关标准（已完成 ' + n + ' / 18 周）';
+  }
+
+  /* ---------- 历史 ---------- */
+  function renderHistory(){
+    var box = document.getElementById('histBox');
+    box.innerHTML = '';
+    var keys = Object.keys(state.records).filter(function(k){
+      var r = state.records[k];
+      return r.notes || r.quiz || (r.charts && r.charts.length) || Object.keys(r.done || {}).length;
+    }).sort().reverse();
+
+    document.getElementById('histTag').textContent = '共 ' + keys.length + ' 天有记录';
+
+    if(!keys.length){
+      box.appendChild(el('div','empty','还没有记录。开始之后这里会按日期列出当天看的集号、标的图、答题得分和写下的知识点。'));
+      return;
+    }
+
+    var t = document.createElement('table');
+    var thead = document.createElement('thead'), hr = document.createElement('tr');
+    ['日期','看过的集','答题','标图','知识点'].forEach(function(x, i){
+      var th = document.createElement('th'); th.textContent = x;
+      if(i === 2 || i === 3) th.className = 'c';
+      hr.appendChild(th);
+    });
+    thead.appendChild(hr); t.appendChild(thead);
+
+    var tb = document.createElement('tbody');
+    keys.forEach(function(k){
+      var r = state.records[k];
+      var idx = diffDays(k, state.startDate);
+      var tr = document.createElement('tr');
+      tr.appendChild(el('td', null, k));
+
+      var c2 = el('td');
+      if(r.eps && r.eps.length){
+        c2.textContent = r.eps.join(' ');
+      } else if(idx >= 0 && idx < DAYS_TOTAL){
+        var info = tasksOf(idx);
+        if(info && info.dow <= 4){
+          var eps = dayEpisodes(info.week, info.dow);
+          c2.textContent = eps.length ? eps.map(function(e){ return e.c; }).join(' ') + '（未标记完成）' : '复盘日';
+        } else {
+          c2.textContent = info ? '周末练图日' : '-';
+        }
+      } else { c2.textContent = '-'; }
+      tr.appendChild(c2);
+
+      var c3 = el('td','c');
+      c3.textContent = (r.quiz && r.quiz.score !== undefined) ? r.quiz.score + ' 分' : '-';
+      tr.appendChild(c3);
+
+      var c4 = el('td','c');
+      if(r.charts && r.charts.length){
+        var cnt = {}, imgs = 0;
+        r.charts.forEach(function(c){
+          if(c.state) cnt[c.state] = (cnt[c.state]||0) + 1;
+          imgs += (c.imgs || []).length;
+        });
+        var detail = Object.keys(cnt).map(function(x){ return x + cnt[x]; }).join(' ');
+        c4.textContent = r.charts.length + ' 条' + (imgs ? ' ' + imgs + ' 图' : '') + (detail ? ' ' + detail : '');
+      } else { c4.textContent = '-'; }
+      tr.appendChild(c4);
+
+      var c5 = el('td');
+      c5.textContent = r.notes || '-';
+      tr.appendChild(c5);
+      tb.appendChild(tr);
+    });
+    t.appendChild(tb); box.appendChild(t);
+  }
+
+  function renderAll(){
+    renderHead(); renderStats(); renderToday(); renderTomorrow();
+    buildQuiz(); renderCal(); renderPlan(); renderHistory();
+    renderChartForm(); renderWrong();
+    document.getElementById('notes').value = (rec(addDays(state.startDate, curIdx), true) || {}).notes || '';
+  }
+
+  /* ---------- 事件 ---------- */
+  document.getElementById('btnPickImg').addEventListener('click', function(){
+    document.getElementById('fileImg').click();
+  });
+  document.getElementById('btnOpenImg').addEventListener('click', function(){
+    if(!FILE_MODE){ toast('启动服务后才能打开文件夹'); return; }
+    var dayKey = addDays(state.startDate, curIdx);
+    fetch('/api/openfolder', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({dir: 'data/img/' + dayKey})
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if(!j.ok) toast(j.error || '打不开');
+    }).catch(function(){ toast('打不开，服务没响应'); });
+  });
+  document.getElementById('fileImg').addEventListener('change', function(e){
+    if(e.target.files && e.target.files.length) addFiles(e.target.files);
+    e.target.value = '';
+  });
+  (function(){
+    var zone = document.getElementById('upzone');
+    ['dragenter','dragover'].forEach(function(ev){
+      zone.addEventListener(ev, function(e){ e.preventDefault(); zone.classList.add('drag'); });
+    });
+    ['dragleave','drop'].forEach(function(ev){
+      zone.addEventListener(ev, function(e){ e.preventDefault(); zone.classList.remove('drag'); });
+    });
+    zone.addEventListener('drop', function(e){
+      e.preventDefault();
+      if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+        addFiles(e.dataTransfer.files);
+      }
+    });
+  })();
+  document.addEventListener('paste', function(e){
+    var items = (e.clipboardData && e.clipboardData.items) || [];
+    var files = [], i;
+    for(i = 0; i < items.length; i++){
+      if(items[i].type && items[i].type.indexOf('image/') === 0){
+        var f = items[i].getAsFile();
+        if(f) files.push(f);
+      }
+    }
+    if(files.length){
+      e.preventDefault();
+      addFiles(files);
+    }
+  });
+
+  document.getElementById('btnChartSave').addEventListener('click', saveChart);
+  document.getElementById('btnSubmitQuiz').addEventListener('click', submitQuiz);
+  document.getElementById('btnClearQuiz').addEventListener('click', function(){
+    var key = addDays(state.startDate, curIdx);
+    var r = rec(key, true);
+    r.quiz = null; save(); buildQuiz(); toast('已清空，可以重答');
+  });
+  document.getElementById('btnNoteSave').addEventListener('click', function(){
+    var key = addDays(state.startDate, curIdx);
+    var r = rec(key, true);
+    r.notes = document.getElementById('notes').value;
+    save();
+    document.getElementById('noteTip').textContent = '已保存到 ' + key;
+    renderHistory(); toast('知识点已保存');
+  });
+  document.getElementById('btnSet').addEventListener('click', function(){
+    var p = document.getElementById('setPanel');
+    p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    document.getElementById('inpStart').value = state.startDate;
+  });
+  document.getElementById('btnStartSave').addEventListener('click', function(){
+    var v = document.getElementById('inpStart').value;
+    if(!v){ toast('先选一个日期'); return; }
+    state.startDate = v; save(); curIdx = nextPendingIdx(); renderAll();
+    toast('排期已按新日期重算');
+  });
+  document.getElementById('btnStartReset').addEventListener('click', function(){
+    state.startDate = todayKey(); save(); curIdx = nextPendingIdx(); renderAll();
+    toast('已重置为今天');
+  });
+
+  function exportData(){
+    var blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'PA学习记录_' + todayKey() + '.json';
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 3000);
+    toast('已导出');
+  }
+  function importData(file){
+    var fr = new FileReader();
+    fr.onload = function(){
+      try{
+        var s = JSON.parse(fr.result);
+        if(!s.records) throw new Error('bad');
+        state = s;
+        if(!state.wrongPool) state.wrongPool = [];
+        if(!state.weeks) state.weeks = [];
+        save(); curIdx = nextPendingIdx(); renderAll();
+        toast('已导入');
+      }catch(e){ toast('导入失败，文件不是这个系统导出的'); }
+    };
+    fr.readAsText(file);
+  }
+  document.getElementById('btnCommit').addEventListener('click', commitGit);
+  document.getElementById('btnExport').addEventListener('click', exportData);
+  document.getElementById('btnExport2').addEventListener('click', exportData);
+  document.getElementById('btnImport').addEventListener('click', function(){ document.getElementById('fileImport').click(); });
+  document.getElementById('btnImport2').addEventListener('click', function(){ document.getElementById('fileImport').click(); });
+  document.getElementById('fileImport').addEventListener('change', function(e){
+    if(e.target.files && e.target.files[0]) importData(e.target.files[0]);
+  });
+  document.getElementById('btnWipe').addEventListener('click', function(){
+    if(!confirm('确定清空全部记录？清空前建议先导出备份。')) return;
+    state = blank(); save(); curIdx = 0; renderAll(); toast('已清空');
+  });
+
+  /* ---------- 启动 ---------- */
+  state = load();
+  curIdx = nextPendingIdx();
+  renderAll();
+  setModeTag();
+  tryLoadFile();
+  if(memOnly) toast('浏览器禁止本地存储，本次记录不会保存');
+})();
+</script>
+</body>
+</html>

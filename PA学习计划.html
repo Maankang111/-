@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>价格行为（Al Brooks）18 周学习计划</title>
+<style>
+  :root{
+    --ink:#1c1c1e;
+    --muted:#6b7280;
+    --line:#e3e6ea;
+    --panel:#f7f8fa;
+    --accent:#2f5d8a;
+    --accent-soft:#eaf0f6;
+    --stage:#eef1f4;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:28px 20px 60px;
+    background:#fff;
+    color:var(--ink);
+    font-family:-apple-system,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    font-size:14px;
+    line-height:1.7;
+  }
+  .wrap{max-width:1000px;margin:0 auto;}
+  h1{font-size:21px;font-weight:600;margin:0 0 6px;letter-spacing:.2px;}
+  .sub{color:var(--muted);font-size:13px;margin:0 0 22px;}
+  section{margin:0 0 34px;}
+  h2{
+    font-size:15px;font-weight:600;margin:0 0 14px;
+    padding-left:10px;border-left:3px solid var(--accent);
+    line-height:1.3;
+  }
+  h3{font-size:13.5px;font-weight:600;margin:18px 0 8px;color:#2b2b2e;}
+  p{margin:0 0 10px;}
+  .note{color:var(--muted);font-size:12.5px;}
+  table{width:100%;border-collapse:collapse;margin:0 0 12px;font-size:13px;}
+  th,td{border:1px solid var(--line);padding:7px 9px;text-align:left;vertical-align:top;}
+  th{background:var(--panel);font-weight:600;color:#35353a;white-space:nowrap;}
+  td.c,th.c{text-align:center;}
+  .box{background:var(--panel);border:1px solid var(--line);padding:14px 16px;margin:0 0 14px;}
+  .box p:last-child{margin-bottom:0;}
+  ul{margin:0 0 10px;padding-left:20px;}
+  li{margin:0 0 6px;}
+
+  label.check{
+    display:flex;align-items:flex-start;gap:9px;
+    padding:6px 0;cursor:pointer;user-select:none;
+  }
+  label.check input{
+    appearance:none;-webkit-appearance:none;
+    width:15px;height:15px;border:1.5px solid #b9bfc7;background:#fff;
+    margin:2px 0 0;flex:0 0 auto;cursor:pointer;position:relative;
+  }
+  label.check input:checked{background:var(--accent);border-color:var(--accent);}
+  label.check input:checked::after{
+    content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;
+    border:solid #fff;border-width:0 1.6px 1.6px 0;transform:rotate(42deg);
+  }
+  label.check.done span{color:var(--muted);text-decoration:line-through;}
+  label.check span{flex:1;}
+
+  .daily{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px;}
+  .day{
+    border:1px solid var(--line);background:#fff;padding:6px 12px;
+    font-size:13px;cursor:pointer;color:#3a3a3e;
+  }
+  .day:hover{border-color:#c2c9d2;}
+  .day.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
+  .counter{font-size:13px;color:var(--muted);}
+  .counter b{color:var(--ink);font-weight:600;}
+
+  .bar{height:6px;background:#eceef1;margin:10px 0 6px;overflow:hidden;}
+  .bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s;}
+
+  input.txt,select{
+    width:100%;border:1px solid transparent;background:transparent;
+    padding:4px 5px;font:inherit;color:inherit;font-size:12.5px;
+  }
+  input.txt:focus,select:focus{outline:none;border-color:var(--accent);background:#fff;}
+  td.fill{padding:2px 4px;}
+  .btn{
+    border:1px solid #c2c9d2;background:#fff;color:#35353a;
+    padding:6px 14px;font:inherit;font-size:13px;cursor:pointer;
+  }
+  .btn:hover{border-color:var(--accent);color:var(--accent);}
+  .btn.plain{border-color:var(--line);color:var(--muted);}
+  .btn.del{border:none;color:#9aa1aa;padding:3px 7px;}
+  .btn.del:hover{color:#8a2f2f;}
+  .row-actions{display:flex;gap:8px;align-items:center;margin-top:6px;}
+  .saved{font-size:12px;color:var(--muted);}
+  .legend{color:var(--muted);font-size:12.5px;margin:0 0 12px;}
+
+  #wtable{font-size:12.5px;}
+  #wtable th{font-size:12px;}
+  #wtable td{padding:6px 8px;}
+  tr.stage-row td{
+    background:var(--stage);font-weight:600;color:#2b3f55;
+    padding:6px 9px;font-size:12.5px;
+  }
+  tr.week-done td{background:#fbfcfd;}
+
+  @media print{
+    body{padding:0;font-size:12px;}
+    .btn,.row-actions,.daily,.counter,.saved,.no-print{display:none !important;}
+    section{page-break-inside:avoid;}
+    tr{page-break-inside:avoid;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>价格行为（Al Brooks）18 周学习计划</h1>
+  <p class="sub">起点：12 到 18 已看过一遍，认得出但标不准。工作日每天两集，周末集中练，全程 18 周约 4 个月，从 10 月 23 日算落在 2027 年 2 月下旬。</p>
+
+  <section>
+    <h2>一、当前定位</h2>
+    <table>
+      <tr><th style="width:110px">项目</th><th>状态</th></tr>
+      <tr><td>已完成</td><td>12 到 18 全部看过一遍，33 集，约 17 小时</td></tr>
+      <tr><td>当前症状</td><td>看的时候都懂，合上视频标不准；概念之间串不起来</td></tr>
+      <tr><td>真实缺口</td><td>不缺输入，缺练习量。视频产生的只是熟悉感，不是提取能力</td></tr>
+      <tr><td>第 4 周目标</td><td>任意一张 5 分钟图，30 秒内判断状态和 Always In 方向</td></tr>
+      <tr><td>18 周目标</td><td>走完 12 到 52 主干，形成自己的判断流程和十条交易铁律</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>二、时间怎么分配</h2>
+    <p class="legend">每天两集，但两集的分工不同。真吸收靠晚上的标图，不靠多看一集。</p>
+    <table>
+      <tr><th style="width:112px">时段</th><th style="width:96px">时长</th><th>做什么</th></tr>
+      <tr><td>工作日 看课</td><td>约 60 分钟</td><td>第 1 集精看，正常速度，只打时间戳不抄板书；第 2 集泛看，1.5 倍速，只回答一个问题：这集在讲哪个状态下的什么判据</td></tr>
+      <tr><td>工作日 练图</td><td>约 30 分钟</td><td>10 分钟回看昨天那张、写错因；20 分钟标今天 1 张新图，写预判四件事：状态、Always In、等哪个 H2 或 L2、止损放到哪</td></tr>
+      <tr><td>周六</td><td>4 小时</td><td>回看本周精看那几集的难点片段，补标 5 张图，把本周欠下的图清完。工作日 5 张加周六 5 张，每周 10 张</td></tr>
+      <tr><td>周日</td><td>2.5 小时</td><td>本周 10 张图并排复盘，只找重复出现的那一个错，写一条规律</td></tr>
+    </table>
+    <p class="note">周投入约 14 小时。视频按每周 10 集推进，比每天一集快一倍，省下来的周数变成练习量，不是提前毕业。如果某天只有一小时，就砍掉第 2 集，标图两张必须保住，顺序不能反。</p>
+  </section>
+
+  <section>
+    <h2>三、今晚：把骨架装回来</h2>
+    <p class="legend">12 到 18 里只有这三集在讲定义和判据，其余 30 集都是展开和举例，从第 1 周开始按计划推进时再回看。</p>
+    <div id="activation"></div>
+    <p class="note">第 4 项必须手写，不要复制。判据要能闭着眼睛说出来才算拿到。</p>
+  </section>
+
+  <section>
+    <h2>四、本周打卡</h2>
+    <div class="daily" id="daily"></div>
+    <p class="counter">本周已打卡 <b id="dailyCount">0</b> 天，目标 6 天。<span id="dailyReset" class="btn plain" style="margin-left:10px;display:inline-block">清空本周</span></p>
+  </section>
+
+  <section>
+    <h2>五、18 周总排期</h2>
+    <p class="legend">一周只练一件事。阶段一的集数按官方编号核过：12 和 13 各 3 集，14 有 5 集，15 有 8 集，16 有 6 集，17 有 2 集，18 有 6 集，合计 33 集，分成 9、10、8、6。阶段二以后集号按你手上资源的顺序数，我按每阶段总集数平均往后推，不指定具体字母。</p>
+    <table id="wtable">
+      <thead>
+        <tr>
+          <th class="c" style="width:52px">周次</th>
+          <th style="width:30%">本周看什么</th>
+          <th style="width:22%">本周练什么</th>
+          <th>过关标准</th>
+          <th class="c" style="width:44px">完成</th>
+        </tr>
+      </thead>
+      <tbody id="weeks"></tbody>
+    </table>
+    <div class="bar"><i id="weekBar"></i></div>
+    <p class="counter"><b id="weekDone">0</b> / 18 周完成　<span id="stageTip" style="margin-left:8px"></span></p>
+  </section>
+
+  <section>
+    <h2>六、复盘记录</h2>
+    <p class="legend">每行一张图。当天只填当天那行，不回头补。错因必须归到四类之一，不要写“感觉不对”。</p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:74px">日期</th>
+          <th style="width:120px">状态预判</th>
+          <th style="width:88px">Always In</th>
+          <th>实际走成什么</th>
+          <th style="width:106px">错因分类</th>
+          <th>一句话教训</th>
+          <th class="c" style="width:38px"></th>
+        </tr>
+      </thead>
+      <tbody id="reviews"></tbody>
+    </table>
+    <div class="row-actions">
+      <button class="btn" id="addRow" type="button">加一行</button>
+      <span class="saved" id="savedTip">记录存在本机浏览器里，换电脑不同步</span>
+    </div>
+  </section>
+
+  <section>
+    <h2>七、第 4 周的三条验收</h2>
+    <div id="gate"></div>
+    <p class="note">三条全过再进阶段二。任何一条不过，把第 4 周的练习延长一周，不开新集。不要用“感觉懂了”当标准。</p>
+  </section>
+
+  <section>
+    <h2>八、六条铁律</h2>
+    <div class="box">
+      <p><b>一、看课配额由练图兑换。</b>当天没标图，第二天不许开新集。每天两集的前提是每天两张图，这条是整套计划唯一的闸门，破了就退回刷课。</p>
+      <p><b>二、进度快不等于可以跳阶段。</b>阶段二的入口只有一条，就是三条验收。提前进 19 会变成背形态名称，混乱只会加重。</p>
+      <p><b>三、51 到 52 尽量提前。</b>第 13 周开始模拟连贯做单时，先把 51A 到 51D 插入看一遍，第 18 周按排期再复习。如果放到最后才看，前面几周的错误会重复犯两个月。</p>
+      <p><b>四、每周只改一个毛病。</b>复盘表五列不是每周都要填满，只填当周那一列。</p>
+      <p><b>五、没有预判的看盘不算练。</b>只看得不到任何东西，被打脸才记得住。</p>
+      <p><b>六、时间不够时先砍课，不砍图。</b>某天只有一小时，就只看一集，标图两张必须保住。练图是这条计划唯一的产出，课延后一周不影响结果，图断一周等于白学。</p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  var KEY = 'pa_brooks_plan_v1';
+
+  var ACTIVATION = [
+    '看 12B 市场循环：永远在趋势或区间，80% 法则（约 28 分钟）',
+    '看 13A Always In 方向与交易者方程（约 24 分钟）',
+    '看 18A 区间的定义与特征：困惑与失望（约 37 分钟）',
+    '手写那张四行状态表：突破、通道、区间、转换，各写一条判据',
+    '标两张 5 分钟图，各切段并写下状态'
+  ];
+
+  /* [周次, 阶段, 看什么, 练什么, 过关标准] */
+  var WEEKS = [
+    ['第 1 周','阶段一 状态（12 到 18）','12A 到 14C，共 9 集','判状态：突破、通道、区间、转换','本周 10 张图切段标状态，连续 5 天不卡壳'],
+    ['第 2 周','阶段一 状态（12 到 18）','14D 到 15H，共 10 集','趋势与突破分类','成功、失败、假突破各找 5 个，各写一句区别'],
+    ['第 3 周','阶段一 状态（12 到 18）','16A 到 17B，共 8 集','通道与微通道','找出 3 个通道变区间并写依据，事后验证成立'],
+    ['第 4 周','阶段一 状态（12 到 18）','18A 到 18F 共 6 集，其后不开新内容','综合预判与三项验收','三条验收全过，不过就延长一周'],
+    ['第 5 周','阶段二 位置（19 到 29，34 集）','本阶段第 1 到 10 集，支撑阻力','识别有效支撑阻力','每张图标出 3 个有效位，并说明为什么有效'],
+    ['第 6 周','阶段二 位置（19 到 29，34 集）','第 11 到 20 集','位置决定形态含义','同一形态在区间上中下各写一句不同结论'],
+    ['第 7 周','阶段二 位置（19 到 29，34 集）','第 21 到 30 集','先位置后形态','判断顺序不颠倒，先写位置再找形态'],
+    ['第 8 周','阶段二 位置（19 到 29，34 集）','第 31 到 34 集，做阶段复盘','综合标图','阶段二累计 40 张图里至少 30 张判断正确'],
+    ['第 9 周','阶段三 下单（30 到 42，48 集）','本阶段第 1 到 10 集，交易者方程与前置条件','算交易者方程','每笔预判写出胜率与盈亏比，不能只写方向'],
+    ['第 10 周','阶段三 下单（30 到 42，48 集）','第 11 到 20 集','入场K与止损','每次止损位能说清依据，不写“感觉这里安全”'],
+    ['第 11 周','阶段三 下单（30 到 42，48 集）','第 21 到 30 集','二次入场','H1 与 H2 的选择说得清，为什么等第二次'],
+    ['第 12 周','阶段三 下单（30 到 42，48 集）','第 31 到 40 集，交易形态','形态实战统计','按形态分类统计，每类至少 5 个样本'],
+    ['第 13 周','阶段三 下单（30 到 42，48 集）','第 41 到 48 集，做阶段复盘','模拟连贯做单','一周模拟 10 到 15 笔，每笔留记录，不删亏损单'],
+    ['第 14 周','阶段四 管理（43 到 52，50 集）','本阶段第 1 到 10 集，交易通道与区间','通道内交易','通道内只在 H2 或 L2 入场，不追'],
+    ['第 15 周','阶段四 管理（43 到 52，50 集）','第 11 到 20 集','区间内交易','区间内不追突破，只做边缘'],
+    ['第 16 周','阶段四 管理（43 到 52，50 集）','第 21 到 30 集，含 48 时段交易','时段差异','开盘、盘中、尾盘的打法分开写'],
+    ['第 17 周','阶段四 管理（43 到 52，50 集）','第 31 到 40 集，含 48 尾段与 49 到 50','波段与剥头皮的取舍','选定一种主风格，另一种只做了解'],
+    ['第 18 周','阶段四 管理（43 到 52，50 集）','第 41 到 50 集，含 51 到 52 亏损管理','错单处理与输出规则','写下十条铁律，每条附一个自己的案例']
+  ];
+
+  var GATE = [
+    '随便给一张图，30 秒内说出当前是四种状态里的哪一种，并说出依据',
+    '能在一张图上指出 3 个通道变区间的位置，理由说得通',
+    '能解释某一个 H2 为什么不该做，理由是当时不该做，不是因为它事后失败了'
+  ];
+
+  var DAYS = ['周一','周二','周三','周四','周五','周六','周日'];
+  var CAUSES = ['状态判错','位置判错','没等到','判断正确','其他'];
+
+  var state = load();
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(raw){ return JSON.parse(raw); }
+    }catch(e){}
+    return {activation:[],weeks:[],days:[],reviews:[],gate:[]};
+  }
+  function save(){
+    try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function el(tag, cls, text){
+    var n = document.createElement(tag);
+    if(cls) n.className = cls;
+    if(text !== undefined) n.textContent = text;
+    return n;
+  }
+
+  /* 激活清单 */
+  (function(){
+    var box = document.getElementById('activation');
+    ACTIVATION.forEach(function(text, i){
+      var lab = el('label','check');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!state.activation[i];
+      lab.appendChild(cb);
+      lab.appendChild(el('span', null, text));
+      if(cb.checked) lab.classList.add('done');
+      cb.addEventListener('change', function(){
+        state.activation[i] = cb.checked;
+        lab.classList.toggle('done', cb.checked);
+        save();
+      });
+      box.appendChild(lab);
+    });
+  })();
+
+  /* 打卡 */
+  var dailyBox = document.getElementById('daily');
+  DAYS.forEach(function(d, i){
+    var b = el('div','day', d);
+    b.setAttribute('role','button');
+    b.tabIndex = 0;
+    if(state.days[i]) b.classList.add('on');
+    function toggle(){
+      state.days[i] = !state.days[i];
+      b.classList.toggle('on', state.days[i]);
+      save(); updateDaily();
+    }
+    b.addEventListener('click', toggle);
+    b.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); toggle(); }});
+    dailyBox.appendChild(b);
+  });
+  function updateDaily(){
+    document.getElementById('dailyCount').textContent = state.days.filter(Boolean).length;
+  }
+  updateDaily();
+  document.getElementById('dailyReset').addEventListener('click', function(){
+    state.days = [];
+    Array.prototype.forEach.call(dailyBox.children, function(c){ c.classList.remove('on'); });
+    save(); updateDaily();
+  });
+
+  /* 18 周 */
+  (function(){
+    var tb = document.getElementById('weeks');
+    var lastStage = '';
+    WEEKS.forEach(function(row, i){
+      if(row[1] !== lastStage){
+        lastStage = row[1];
+        var sr = document.createElement('tr');
+        sr.className = 'stage-row';
+        var sd = el('td', null, row[1]);
+        sd.colSpan = 5;
+        sr.appendChild(sd);
+        tb.appendChild(sr);
+      }
+      var tr = document.createElement('tr');
+      tr.appendChild(el('td','c', row[0]));
+      tr.appendChild(el('td', null, row[2]));
+      tr.appendChild(el('td', null, row[3]));
+      tr.appendChild(el('td', null, row[4]));
+      var tdc = el('td','c');
+      var lab = el('label','check');
+      lab.style.padding = '0';
+      lab.style.justifyContent = 'center';
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!state.weeks[i];
+      if(cb.checked) tr.classList.add('week-done');
+      lab.appendChild(cb);
+      cb.addEventListener('change', function(){
+        state.weeks[i] = cb.checked;
+        tr.classList.toggle('week-done', cb.checked);
+        save(); updateWeeks();
+      });
+      tdc.appendChild(lab);
+      tr.appendChild(tdc);
+      tb.appendChild(tr);
+    });
+  })();
+
+  function updateWeeks(){
+    var n = state.weeks.filter(Boolean).length;
+    document.getElementById('weekDone').textContent = n;
+    document.getElementById('weekBar').style.width = (n/18*100) + '%';
+    var tip = '';
+    if(n >= 18) tip = '全部完成';
+    else if(n >= 14) tip = '当前在阶段四 管理';
+    else if(n >= 9) tip = '当前在阶段三 下单';
+    else if(n >= 5) tip = '当前在阶段二 位置';
+    else tip = '当前在阶段一 状态';
+    document.getElementById('stageTip').textContent = tip;
+  }
+  updateWeeks();
+
+  /* 复盘表 */
+  var rbody = document.getElementById('reviews');
+
+  function addRow(data){
+    data = data || {};
+    var tr = document.createElement('tr');
+
+    function textCell(key, placeholder){
+      var td = el('td','fill');
+      var inp = document.createElement('input');
+      inp.className = 'txt';
+      inp.type = 'text';
+      inp.placeholder = placeholder || '';
+      inp.value = data[key] || '';
+      inp.addEventListener('input', function(){ data[key] = inp.value; save(); });
+      td.appendChild(inp);
+      return td;
+    }
+
+    tr.appendChild(textCell('date','10-23'));
+    tr.appendChild(textCell('state','通道'));
+    tr.appendChild(textCell('ai','多'));
+    tr.appendChild(textCell('actual','变区间'));
+    tr.appendChild(textCell('lesson','追太晚'));
+
+    var tdCause = el('td','fill');
+    var sel = document.createElement('select');
+    var o0 = document.createElement('option'); o0.value=''; o0.textContent='选择';
+    sel.appendChild(o0);
+    CAUSES.forEach(function(c){
+      var o = document.createElement('option'); o.value=c; o.textContent=c;
+      if(data.cause === c) o.selected = true;
+      sel.appendChild(o);
+    });
+    sel.addEventListener('change', function(){ data.cause = sel.value; save(); });
+    tdCause.appendChild(sel);
+    tr.insertBefore(tdCause, tr.children[4]);
+
+    var tdDel = el('td','c');
+    var del = el('button','btn del','删');
+    del.type = 'button';
+    del.addEventListener('click', function(){
+      var idx = state.reviews.indexOf(data);
+      if(idx > -1) state.reviews.splice(idx,1);
+      tr.parentNode.removeChild(tr);
+      save();
+    });
+    tdDel.appendChild(del);
+    tr.appendChild(tdDel);
+
+    if(state.reviews.indexOf(data) === -1) state.reviews.push(data);
+    rbody.appendChild(tr);
+  }
+
+  state.reviews.forEach(function(r){ addRow(r); });
+  if(!state.reviews.length){ for(var i=0;i<5;i++){ addRow({}); } }
+
+  document.getElementById('addRow').addEventListener('click', function(){ addRow({}); save(); });
+
+  /* 验收 */
+  (function(){
+    if(!state.gate) state.gate = [];
+    var box = document.getElementById('gate');
+    GATE.forEach(function(text, i){
+      var lab = el('label','check');
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!state.gate[i];
+      lab.appendChild(cb);
+      lab.appendChild(el('span', null, text));
+      if(cb.checked) lab.classList.add('done');
+      cb.addEventListener('change', function(){
+        state.gate[i] = cb.checked;
+        lab.classList.toggle('done', cb.checked);
+        save();
+      });
+      box.appendChild(lab);
+    });
+  })();
+
+})();
+</script>
+</body>
+</html>
