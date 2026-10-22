@@ -667,6 +667,21 @@
     return state.records[key];
   }
 
+  /* 清掉渲染时顺手创建、但一个字都没填的空记录 */
+  function pruneEmpty(){
+    var n = 0;
+    Object.keys(state.records).forEach(function(k){
+      var r = state.records[k];
+      if(!r){ delete state.records[k]; n++; return; }
+      var hasDone = Object.keys(r.done || {}).length;
+      if(!hasDone && !r.notes && !r.quiz && !(r.charts && r.charts.length)){
+        delete state.records[k];
+        n++;
+      }
+    });
+    return n;
+  }
+
   /* ---------- 排期 ---------- */
   function weekOf(i){ return Math.floor(i / 7); }
   function dowOf(i){ return i % 7; }
@@ -755,9 +770,13 @@
     return n;
   }
   function streak(){
-    var n = 0, i = diffDays(todayKey(), state.startDate);
-    if(i < 0) return 0;
-    for(; i>=0; i--){
+    var todayIdx = diffDays(todayKey(), state.startDate);
+    if(todayIdx < 0) return 0;
+    var i = Math.min(todayIdx, DAYS_TOTAL - 1);
+    /* 今天还没做完时从昨天开始数，不然早上打开会显示 0 */
+    if(!isDoneAll(addDays(state.startDate, i))) i--;
+    var n = 0;
+    for(; i >= 0; i--){
       if(isDoneAll(addDays(state.startDate, i))) n++;
       else break;
     }
@@ -855,6 +874,7 @@
           toast('这天完成，进度已推进');
           curIdx = nextPendingIdx();
           renderToday(); renderTomorrow(); renderStats(); renderCal(); buildQuiz();
+          renderChartForm(); renderHistory(); renderWrong();
         }
       });
       card.appendChild(row);
@@ -877,12 +897,12 @@
       toast('已顺延到下一天');
     });
     acts.appendChild(b1);
-    var b2 = el('button','btn sm ghost','跳到本周起点');
+    var b2 = el('button','btn sm ghost','回到当前进度');
     b2.type = 'button';
     b2.addEventListener('click', function(){
-      curIdx = weekOf(curIdx) * 7;
-      renderToday(); renderTomorrow(); renderStats(); buildQuiz();
-      toast('已跳回本周第一天');
+      curIdx = nextPendingIdx();
+      renderToday(); renderTomorrow(); renderStats(); renderCal(); buildQuiz(); renderChartForm();
+      toast('已回到该做的那天');
     });
     acts.appendChild(b2);
     card.appendChild(acts);
@@ -923,6 +943,7 @@
 
   /* ---------- 图片 ---------- */
   var pendingImgs = [];
+  var lastChartIdx = -99;
 
   function imgSrcOf(v){
     if(!v) return '';
@@ -1028,6 +1049,9 @@
   }
 
   function renderChartForm(){
+    /* 换了一天，前一天没保存的图不要带过来 */
+    if(lastChartIdx !== -99 && lastChartIdx !== curIdx) pendingImgs = [];
+    lastChartIdx = curIdx;
     var key = addDays(state.startDate, curIdx);
     var r = rec(key, true) || {};
     var c = r.chart || {};
@@ -1124,12 +1148,12 @@
     toast('已存第 ' + r.charts.length + ' 张');
   }
 
-  /* 按遗忘点回看：3 天、7 天、15 天前真正学过的集 */
+  /* 按遗忘点回看：以当前实际在学的那天为准，而不是日历今天 */
   function reviewItems(){
     var out = [], gaps = [3, 7, 15], i;
-    var todayIdx = Math.min(diffDays(todayKey(), state.startDate), DAYS_TOTAL);
+    var baseIdx = Math.min(curIdx, DAYS_TOTAL - 1);
     for(i = 0; i < gaps.length; i++){
-      var gi = todayIdx - gaps[i];
+      var gi = baseIdx - gaps[i];
       if(gi < 0) continue;
       var k = addDays(state.startDate, gi);
       var r = rec(k, false);
@@ -1477,6 +1501,7 @@
   }
 
   function renderAll(){
+    pruneEmpty();
     renderHead(); renderStats(); renderToday(); renderTomorrow();
     buildQuiz(); renderCal(); renderPlan(); renderHistory();
     renderChartForm(); renderWrong();
@@ -1601,13 +1626,18 @@
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({msg: msg})
-    }).then(function(r){ return r.json(); }).then(function(){
+    }).then(function(r){ return r.json(); }).then(function(j){
+      if(!j.ok){ toast('提交失败：' + (j.message || '未知原因')); return null; }
       return fetch('/api/push', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: '{}'
       });
-    }).then(function(r){ return r.json(); }).then(function(j){
+    }).then(function(r){
+      if(!r) return null;
+      return r.json();
+    }).then(function(j){
+      if(!j) return;
       toast(j.ok ? ('同步完成：' + j.message) : ('推送失败：' + j.message));
     }).catch(function(){
       toast('同步失败，检查网络或服务是否还在');
@@ -1631,11 +1661,32 @@
 
   /* ---------- 启动 ---------- */
   state = load();
+  pruneEmpty();
   curIdx = nextPendingIdx();
   renderAll();
   setModeTag();
   tryLoadFile();
   if(memOnly) toast('浏览器禁止本地存储，本次记录不会保存');
+
+  /* 页面开着过夜，日期变了自动切到新的一天 */
+  var lastDay = todayKey();
+  setInterval(function(){
+    var now = todayKey();
+    if(now === lastDay) return;
+    lastDay = now;
+    curIdx = nextPendingIdx();
+    renderAll();
+    toast('日期已更新到 ' + now);
+  }, 60000);
+
+  /* 关页面时把还没落盘的数据送出去，避免防抖窗口丢数据 */
+  window.addEventListener('beforeunload', function(){
+    if(!FILE_MODE || !saveTimer) return;
+    clearTimeout(saveTimer);
+    try{
+      navigator.sendBeacon('/api/data', new Blob([JSON.stringify(state)], {type: 'application/json'}));
+    }catch(e){}
+  });
 })();
 </script>
 </body>
