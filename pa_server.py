@@ -52,7 +52,8 @@ def write_data(d):
     os.replace(tmp, DATA_FILE)
 
 
-def git(*args):
+def git(*args, timeout=60):
+    env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
     return subprocess.run(
         ["git"] + list(args),
         cwd=BASE_DIR,
@@ -60,7 +61,31 @@ def git(*args):
         text=True,
         encoding="utf-8",
         errors="replace",
+        env=env,
+        timeout=timeout,
     )
+
+
+def git_push():
+    """把本地提交推到远程，返回 (ok, message)。"""
+    if "origin" not in (git("remote").stdout or ""):
+        return False, "还没配远程地址，先运行 setup_personal_git.py"
+    try:
+        r = git("push", "origin", "HEAD", timeout=90)
+    except subprocess.TimeoutExpired:
+        return False, "推送超时，可能是网络问题或凭据过期，试着手动 git push"
+    text = ((r.stdout or "") + (r.stderr or "")).strip()
+    low = text.lower()
+    if r.returncode == 0:
+        if "everything up-to-date" in low or "已是最新" in text:
+            return True, "远程已经是最新"
+        lines = [l for l in text.splitlines() if l.strip()]
+        return True, (lines[-1].strip() if lines else "已推送")
+    if "authentication failed" in low or "could not read username" in low or "permission denied" in low:
+        return False, "认证失败，在命令行执行一次 git push 重新登录"
+    if "rejected" in low or "non-fast-forward" in low:
+        return False, "远程有本地没有的提交，先 git pull --rebase 再推"
+    return False, text[:300] or "推送失败，原因不明"
 
 
 def git_commit(msg):
@@ -184,6 +209,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/commit":
             msg = body.get("msg") or ("学习记录 " + time.strftime("%Y-%m-%d %H:%M"))
             ok, info = git_commit(msg)
+            self._send(200 if ok else 500, {"ok": ok, "message": info})
+            return
+
+        if path == "/api/push":
+            ok, info = git_push()
             self._send(200 if ok else 500, {"ok": ok, "message": info})
             return
 

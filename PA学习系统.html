@@ -136,6 +136,7 @@
     <div class="actions flex">
       <span class="mode" id="modeTag">浏览器本地</span>
       <button class="btn" id="btnCommit" type="button">提交到 git</button>
+      <button class="btn" id="btnPush" type="button">同步到远程</button>
       <button class="btn ghost" id="btnSet" type="button">设置</button>
       <button class="btn" id="btnExport" type="button">导出备份</button>
       <button class="btn" id="btnImport" type="button">导入备份</button>
@@ -1587,6 +1588,35 @@
     fr.readAsText(file);
   }
   document.getElementById('btnCommit').addEventListener('click', commitGit);
+
+  /* 一键同步：先提交，再推送 */
+  function pushRemote(){
+    if(!FILE_MODE){ toast('先启动服务，从 localhost 打开'); return; }
+    var btn = document.getElementById('btnPush');
+    btn.disabled = true;
+    btn.textContent = '同步中';
+    var d = new Date();
+    var msg = '学习记录 ' + fmt(d) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    fetch('/api/commit', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({msg: msg})
+    }).then(function(r){ return r.json(); }).then(function(){
+      return fetch('/api/push', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: '{}'
+      });
+    }).then(function(r){ return r.json(); }).then(function(j){
+      toast(j.ok ? ('同步完成：' + j.message) : ('推送失败：' + j.message));
+    }).catch(function(){
+      toast('同步失败，检查网络或服务是否还在');
+    }).then(function(){
+      btn.disabled = false;
+      btn.textContent = '同步到远程';
+    });
+  }
+  document.getElementById('btnPush').addEventListener('click', pushRemote);
   document.getElementById('btnExport').addEventListener('click', exportData);
   document.getElementById('btnExport2').addEventListener('click', exportData);
   document.getElementById('btnImport').addEventListener('click', function(){ document.getElementById('fileImport').click(); });
