@@ -993,6 +993,7 @@
   function addFiles(files){
     Array.prototype.forEach.call(files, function(f){
       if(!f || !f.type || f.type.indexOf('image/') !== 0){ toast('只能传图片文件'); return; }
+      if(f.size > 15 * 1024 * 1024){ toast('这张超过 15MB，先压缩或裁剪一下：' + (f.name || '')); return; }
       var fr = new FileReader();
       fr.onload = function(){
         var dataUrl = fr.result;
@@ -1304,6 +1305,14 @@
   function submitQuiz(){
     if(quizState.locked){ toast('今天已经交过，点重做可以再答一次'); return; }
     if(!quizState.items.length) return;
+
+    var blank = 0;
+    quizState.items.forEach(function(q, i){
+      var a = quizState.answers[i];
+      if(a === undefined || a === null || String(a).trim() === '') blank++;
+    });
+    if(blank > 0 && !confirm('还有 ' + blank + ' 题没答，这些会算错。确定提交吗？')) return;
+
     var score = 0, answers = {}, wrongNow = [];
 
     quizState.items.forEach(function(q, i){
